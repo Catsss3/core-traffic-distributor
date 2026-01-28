@@ -2,21 +2,28 @@
 name: Sync Logic
 on:
   schedule:
-    - cron: "0 0 */2 * *"
+    - cron: '0 */48 * * *'
   workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      - run: pip install requests
-      - run: python engine.py
-      - run: |
+      - name: Install dependencies
+        run: pip install requests
+      - name: Run Engine (Gathering)
+        run: python engine.py
+      - name: Run Checker (URL Test)
+        run: python checker.py
+      - name: Deploy Results
+        run: |
           git config --global user.name "web-core-bot"
-          git config --global user.email "core@github.com"
+          git config --global user.email "bot@github.com"
           git add .
-          git commit -m "sync metadata" || exit 0
+          git commit -m "Full sync with URL Test 🎯" || exit 0
           git push
