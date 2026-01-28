@@ -1,0 +1,22 @@
+
+name: Sync Logic
+on:
+  schedule:
+    - cron: "0 0 */2 * *"
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - run: pip install requests
+      - run: python engine.py
+      - run: |
+          git config --global user.name "web-core-bot"
+          git config --global user.email "core@github.com"
+          git add .
+          git commit -m "sync metadata" || exit 0
+          git push
