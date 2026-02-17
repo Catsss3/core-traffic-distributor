@@ -1,11 +1,10 @@
-import os, json, subprocess, time, socket, logging, concurrent.futures
+import os, json, subprocess, time, socket, logging, concurrent.futures, uuid
 from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
-# --- Конфигурация ---
 TEST_URL = "http://cp.cloudflare.com/"
 TIMEOUT = 5
-THREADS = 30 
+THREADS = 40 
 XRAY_PATH = "./xray"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -28,12 +27,11 @@ def parse_vless(link: str) -> Optional[dict]:
             "pbk": params.get("pbk", [""])[0], "sid": params.get("sid", [""])[0],
             "flow": params.get("flow", [""])[0]
         }
-    except Exception as e:
-        logging.debug(f"Ошибка парсинга: {e}")
-        return None
+    except: return None
 
-def test_worker(vless_link: str, thread_id: int) -> Optional[str]:
-    listen_port = 10000 + thread_id
+def test_worker(vless_link: str, task_id: int) -> Optional[str]:
+    unique_id = f"{task_id}_{uuid.uuid4().hex[:6]}"
+    listen_port = 10000 + (task_id % 15000)
     data = parse_vless(vless_link)
     if not data: return None
 
@@ -51,29 +49,24 @@ def test_worker(vless_link: str, thread_id: int) -> Optional[str]:
         }]
     }
 
-    cfg_path = f"config_{thread_id}.json"
+    cfg_path = f"config_{unique_id}.json"
     proc = None
     try:
         with open(cfg_path, "w") as f: json.dump(config, f)
         proc = subprocess.Popen([XRAY_PATH, "-c", cfg_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        
         for _ in range(10):
             if is_port_open(listen_port): break
             time.sleep(0.1)
         else: return None
-
-        res = subprocess.run(
-            ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "--proxy", f"socks5://127.0.0.1:{listen_port}", TEST_URL, "--max-time", str(TIMEOUT)],
-            capture_output=True, text=True
-        )
+        res = subprocess.run(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "--proxy", f"socks5://127.0.0.1:{listen_port}", TEST_URL, "--max-time", str(TIMEOUT)], capture_output=True, text=True)
         if res.stdout.strip() in ["200", "204"]:
             logging.info(f"OK: {data['address']}")
             return vless_link
-    except Exception: pass
+    except: pass
     finally:
         if proc:
             proc.terminate()
-            try: proc.wait(timeout=2)
+            try: proc.wait(timeout=1)
             except: proc.kill()
         if os.path.exists(cfg_path): os.remove(cfg_path)
     return None
@@ -82,15 +75,15 @@ def main():
     if not os.path.exists("distributor.txt"): return
     with open("distributor.txt", "r") as f:
         proxies = list(set([l.strip() for l in f.readlines() if l.strip()]))
-    
-    logging.info(f"🚀 Стелла начинает тест {len(proxies)} прокси...")
+    logging.info(f"🚀 Стелла исправляет гонку и тестит {len(proxies)} прокси...")
     valid = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=THREADS) as executor:
-        futures = {executor.submit(test_worker, proxies[i], i % THREADS): i for i in range(len(proxies))}
+        futures = {executor.submit(test_worker, proxies[i], i): i for i in range(len(proxies))}
         for future in concurrent.futures.as_completed(futures):
-            res = future.result()
-            if res: valid.append(res)
-            
+            try:
+                res = future.result()
+                if res: valid.append(res)
+            except: pass
     with open("distributor.txt", "w") as f: f.write("\n".join(valid))
     logging.info(f"💎 Финал: {len(valid)} живых.")
 
