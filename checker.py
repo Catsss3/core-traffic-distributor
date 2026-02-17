@@ -1,22 +1,23 @@
+import os, json, subprocess, time, socket, logging, concurrent.futures
+from typing import Optional
+from urllib.parse import urlparse, parse_qs
 
-import os
-import json
-import subprocess
-import time
-import concurrent.futures
-from urllib.parse import urlparse, parse_qs, unquote
-
-# Твоя новая мишень как в Nekobox 🎯
+# --- Конфигурация ---
 TEST_URL = "http://cp.cloudflare.com/"
 TIMEOUT = 5
 THREADS = 30 
+XRAY_PATH = "./xray"
 
-def install_xray():
-    if not os.path.exists("./xray"):
-        os.system("curl -L https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip -o xray.zip")
-        os.system("unzip -o xray.zip xray && chmod +x xray")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-def parse_vless(link):
+def is_port_open(port: int) -> bool:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.5)
+            return s.connect_ex(("127.0.0.1", port)) == 0
+    except OSError: return False
+
+def parse_vless(link: str) -> Optional[dict]:
     try:
         url = urlparse(link)
         params = parse_qs(url.query)
@@ -27,12 +28,15 @@ def parse_vless(link):
             "pbk": params.get("pbk", [""])[0], "sid": params.get("sid", [""])[0],
             "flow": params.get("flow", [""])[0]
         }
-    except: return None
+    except Exception as e:
+        logging.debug(f"Ошибка парсинга: {e}")
+        return None
 
-def test_worker(vless_link, thread_id):
+def test_worker(vless_link: str, thread_id: int) -> Optional[str]:
     listen_port = 10000 + thread_id
     data = parse_vless(vless_link)
     if not data: return None
+
     config = {
         "log": {"loglevel": "none"},
         "inbounds": [{"port": listen_port, "protocol": "socks", "settings": {"udp": True}}],
@@ -46,35 +50,49 @@ def test_worker(vless_link, thread_id):
             }
         }]
     }
-    with open(f"config_{thread_id}.json", "w") as f: json.dump(config, f)
-    proc = subprocess.Popen(["./xray", "-c", f"config_{thread_id}.json"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(1.5)
+
+    cfg_path = f"config_{thread_id}.json"
+    proc = None
     try:
+        with open(cfg_path, "w") as f: json.dump(config, f)
+        proc = subprocess.Popen([XRAY_PATH, "-c", cfg_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        for _ in range(10):
+            if is_port_open(listen_port): break
+            time.sleep(0.1)
+        else: return None
+
         res = subprocess.run(
             ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "--proxy", f"socks5://127.0.0.1:{listen_port}", TEST_URL, "--max-time", str(TIMEOUT)],
             capture_output=True, text=True
         )
-        if res.stdout.strip() in ["200", "204"]: return vless_link
-    except: pass
+        if res.stdout.strip() in ["200", "204"]:
+            logging.info(f"OK: {data['address']}")
+            return vless_link
+    except Exception: pass
     finally:
-        proc.terminate()
-        if os.path.exists(f"config_{thread_id}.json"): os.remove(f"config_{thread_id}.json")
+        if proc:
+            proc.terminate()
+            try: proc.wait(timeout=2)
+            except: proc.kill()
+        if os.path.exists(cfg_path): os.remove(cfg_path)
     return None
 
 def main():
-    install_xray()
     if not os.path.exists("distributor.txt"): return
     with open("distributor.txt", "r") as f:
         proxies = list(set([l.strip() for l in f.readlines() if l.strip()]))
-    print(f"🚀 Проверка через Cloudflare для {len(proxies)} прокси...")
+    
+    logging.info(f"🚀 Стелла начинает тест {len(proxies)} прокси...")
     valid = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=THREADS) as executor:
         futures = {executor.submit(test_worker, proxies[i], i % THREADS): i for i in range(len(proxies))}
         for future in concurrent.futures.as_completed(futures):
             res = future.result()
             if res: valid.append(res)
+            
     with open("distributor.txt", "w") as f: f.write("\n".join(valid))
-    print(f"💎 Готово! Найдено живых: {len(valid)}")
+    logging.info(f"💎 Финал: {len(valid)} живых.")
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
