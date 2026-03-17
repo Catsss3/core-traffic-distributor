@@ -1,29 +1,45 @@
-
 name: Sync Logic
+
 on:
   schedule:
-    - cron: '0 */48 * * *'
-  workflow_dispatch:
+    # 🌙 Запуск в 04:00 утра каждые два дня (раз в 48 часов)
+    - cron: '0 4 */2 * *' 
+  workflow_dispatch: {}
+
+# Защита от дублей, если вдруг запуск затянется
+concurrency:
+  group: core-sync
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
+
       - name: Install dependencies
-        run: pip install requests
+        run: pip install --quiet requests aiohttp
+
       - name: Run Engine (Gathering)
         run: python engine.py
+
       - name: Run Checker (URL Test)
         run: python checker.py
+
       - name: Deploy Results
         run: |
           git config --global user.name "web-core-bot"
           git config --global user.email "bot@github.com"
           git add .
-          git commit -m "Full sync with URL Test 🎯" || exit 0
-          git push
+          # exit 0 гарантирует, что билд не упадет, если ничего нового не нашлось
+          git commit -m "🎯 Stella: Full Sync & URL Test (48h Cycle) ✨" || exit 0
+          git push origin main
