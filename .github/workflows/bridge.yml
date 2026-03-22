@@ -1,0 +1,20 @@
+name: Cloudflare to MailRu Bridge
+
+on:
+  schedule:
+    # Запуск каждые 12 часов
+    - cron: '0 */12 * * *' 
+  workflow_dispatch: {} 
+
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🛰️ Download from Cloudflare
+        run: |
+          curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_proxies.txt
+          
+      - name: 🚀 Upload to Mail.ru Cloud
+        run: |
+          # Используем другое имя файла, чтобы не мешать основному маину
+          curl -T stella_proxies.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/stella_bridge.txt"
