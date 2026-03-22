@@ -9,7 +9,7 @@ jobs:
   transfer:
     runs-on: ubuntu-latest
     steps:
-      - name: 🍄 Сборка и Чистка "Белого Гриба" (V2Ray/Vless)
+      - name: 🍄 Сборка и Чистка Vless/V2Ray
         run: |
           curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_bridge.txt || touch stella_bridge.txt
           cat <<EOF > sources_v2ray.txt
@@ -46,7 +46,7 @@ jobs:
           done < sources_v2ray.txt
           grep -v '^[[:space:]]*$' raw_v2ray.txt | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sort -u > white_list.txt
 
-      - name: ✈️ Сборка Telegram MTProto
+      - name: ✈️ Мега-Сборка Telegram MTProto
         run: |
           cat <<EOF > sources_mtproto.txt
           https://raw.githubusercontent.com/Argh94/Proxy-List/main/MTProto.txt
@@ -55,24 +55,24 @@ jobs:
           https://raw.githubusercontent.com/Moghadam7/MTProto-Proxy/main/MTProto.txt
           https://raw.githubusercontent.com/hookzof/socks5_list/master/mtproto.txt
           https://raw.githubusercontent.com/Yidadaa/MTProtoProxyList/main/proxy.txt
+          https://raw.githubusercontent.com/proxy-mtproto/MTProto-Proxy-List/main/mtproto.txt
+          https://raw.githubusercontent.com/The-Vesta/Proxy-List/main/MTProto.txt
+          https://raw.githubusercontent.com/BinyuProxy/Telegram-Proxy/main/mtproto.txt
+          https://raw.githubusercontent.com/EtheHeal/TG-Proxy/main/mtproto.txt
+          https://raw.githubusercontent.com/V-I-P-E-R-L-I-S-T/Proxy-List/main/mtproto.txt
           EOF
           touch raw_mtproto.txt
           while read -r line; do
-            echo "Качаю MTProto: $line"
+            echo "Парсим Телеге: $line"
             curl -sSL --connect-timeout 8 --max-time 12 "$line" >> raw_mtproto.txt || true
           done < sources_mtproto.txt
-          # Чистим MTProto от дублей
-          grep -v '^[[:space:]]*$' raw_mtproto.txt | sort -u > mtproto.txt
-          echo "Собрано уникальных MTProto: $(wc -l < mtproto.txt)"
+          # Оставляем только уникальные ссылки на прокси, убираем мусор
+          grep -E "tg://proxy|t.me/proxy" raw_mtproto.txt | sort -u > mtproto.txt
+          echo "Итого уникальных MTProto ключей: $(wc -l < mtproto.txt)"
 
-      - name: 🚀 Отправка в Облако Mail.ru (с папками)
+      - name: 🚀 Обновление Облака
         run: |
-          # 1. Основные файлы в корень
           curl -T stella_bridge.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/stella_bridge.txt"
           curl -T white_list.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/white_list.txt"
-          
-          # 2. MTProto в отдельную папку telegram
-          # Сначала пробуем создать папку (на всякий случай)
           curl -X MKCOL --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/telegram/" || true
-          # Загружаем файл в папку
           curl -T mtproto.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/telegram/mtproto.txt"
