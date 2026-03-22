@@ -2,7 +2,6 @@ name: Cloudflare to MailRu Bridge
 
 on:
   schedule:
-    # Запуск каждые 12 часов для обновления списков
     - cron: '0 */12 * * *' 
   workflow_dispatch: {} 
 
@@ -10,29 +9,55 @@ jobs:
   transfer:
     runs-on: ubuntu-latest
     steps:
-      - name: 🛰️ Сборка "Белого Гриба" по частям
+      - name: 🍄 Сборка "Белого Гриба" напрямую
         run: |
-          # 1. Забираем основной общий список
-          curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_bridge.txt
+          # 1. Скачиваем основной мост (пусть Cloudflare отдаст хоть что-то)
+          curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_bridge.txt || touch stella_bridge.txt
           
-          # 2. Собираем 4 части Белого Гриба
-          echo "Качаем части..."
-          curl -L "https://stella-white-1.vehesslav.workers.dev" > w1.txt
-          curl -L "https://stella-white-2.vehesslav.workers.dev" > w2.txt
-          curl -L "https://stella-white-3.vehesslav.workers.dev" > w3.txt
-          curl -L "https://stella-white-4.vehesslav.workers.dev" > w4.txt
+          # 2. Создаем список ссылок из твоего файла bely_grib.docx
+          cat <<EOF > sources.txt
+          https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Cable.txt
+          https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt
+          https://raw.githubusercontent.com/liMilCo/v2r/refs/heads/main/all_configs.txt
+          https://raw.githubusercontent.com/STR97/STRUGOV/refs/heads/main/STR.BYPASS
+          https://raw.githubusercontent.com/zieng2/wl/main/vless_lite.txt
+          https://raw.githubusercontent.com/zieng2/wl/main/vless_universal.txt
+          https://raw.githubusercontent.com/LowiKLive/BypassWhitelistRu/refs/heads/main/WhiteList-Bypass_Ru.txt
+          https://raw.githubusercontent.com/AvenCores/goida-vpn-configs/refs/heads/main/githubmirror/26.txt
+          https://raw.githubusercontent.com/55prosek-lgtm/vpn_config_for_russia/refs/heads/main/whitelist.txt
+          https://raw.githubusercontent.com/vlesscollector/vlesscollector/refs/heads/main/vless_configs.txt
+          https://raw.githubusercontent.com/Kirillo4ka/vpn-configs-for-russia/refs/heads/main/Vless-Rus-Mobile-White-List.txt
+          https://raw.githubusercontent.com/whoahaow/rjsxrd/refs/heads/main/githubmirror/bypass-unsecure/bypass-unsecure-all.txt
+          https://raw.githubusercontent.com/FLEXIY0/matryoshka-vpn/main/configs/russia_whitelist.txt
+          https://bp.wl.free.nf/confs/selected.txt
+          https://bp.wl.free.nf/confs/wl.txt
+          https://bp.wl.free.nf/confs/merged.txt
+          https://raw.githubusercontent.com/SilentGhostCodes/WhiteListVpn/refs/heads/main/config.txt
+          https://etoneya.a9fm.site/whitelist
+          https://subs.root.sx/hdff1
+          https://raw.githubusercontent.com/LimeHi/LimeVPN/refs/heads/main/LimeVPN.txt
+          https://catkts.qzz.io/vpn-service/catvpn/fornekobox.txt
+          https://raw.githubusercontent.com/officialdakari/psychic-octo-tribble/refs/heads/main/subwl.txt
+          https://raw.githubusercontent.com/RKPchannel/RKP_bypass_configs/refs/heads/main/configs
+          https://raw.githubusercontent.com/Ai123999/WhiteeListSub/refs/heads/main/whitelistkeys
+          https://raw.githubusercontent.com/Ai123999/WhiteKeys/refs/heads/main/WhiteKeys
+          https://storage.yandexcloud.net/cid-vpn/whitelist.txt
+          https://raw.githubusercontent.com/FalerChannel/FalerChannel/refs/heads/main/configs
+          https://raw.githubusercontent.com/xcom024/vless/refs/heads/main/list.txt
+          EOF
+
+          # 3. Качаем всё по списку прямо здесь
+          touch white_list.txt
+          while read -r url; do
+            echo "Обработка: \$url"
+            curl -sSL --connect-timeout 10 --max-time 15 -A "v2rayNG/1.8.5" "\$url" >> white_list.txt || echo "Пропуск: \$url"
+            echo "" >> white_list.txt
+          done < sources.txt
           
-          # 3. Склеиваем их в один большой файл white_list.txt
-          cat w1.txt w2.txt w3.txt w4.txt > white_list.txt
-          
-          # Проверка: сколько строк получилось
-          echo "Итого строк в белом списке:"
+          echo "Сборка завершена!"
           wc -l white_list.txt
 
-      - name: 🚀 Отправка в Облако Mail.ru
+      - name: 🚀 Загрузка в Облако Mail.ru
         run: |
-          # Загружаем основной мост
           curl -T stella_bridge.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/stella_bridge.txt"
-          
-          # Загружаем собранный Белый Гриб
           curl -T white_list.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/white_list.txt"
