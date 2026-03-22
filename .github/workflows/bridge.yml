@@ -2,6 +2,7 @@ name: Cloudflare to MailRu Bridge
 
 on:
   schedule:
+    # Обновление каждые 12 часов
     - cron: '0 */12 * * *' 
   workflow_dispatch: {} 
 
@@ -9,12 +10,12 @@ jobs:
   transfer:
     runs-on: ubuntu-latest
     steps:
-      - name: 🍄 Сборка "Белого Гриба" напрямую
+      - name: 🍄 Сборка и Ультра-Чистка "Белого Гриба"
         run: |
-          # 1. Основной мост из Cloudflare (уже работает, 3.9MB!)
+          # 1. Забираем основной мост из Cloudflare
           curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_bridge.txt || touch stella_bridge.txt
           
-          # 2. Создаем список ссылок
+          # 2. Создаем список всех 28 источников
           cat <<EOF > sources.txt
           https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Cable.txt
           https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt
@@ -34,7 +35,6 @@ jobs:
           https://bp.wl.free.nf/confs/merged.txt
           https://raw.githubusercontent.com/SilentGhostCodes/WhiteListVpn/refs/heads/main/config.txt
           https://etoneya.a9fm.site/whitelist
-          https://subs.root.sx/hdff1
           https://raw.githubusercontent.com/LimeHi/LimeVPN/refs/heads/main/LimeVPN.txt
           https://catkts.qzz.io/vpn-service/catvpn/fornekobox.txt
           https://raw.githubusercontent.com/officialdakari/psychic-octo-tribble/refs/heads/main/subwl.txt
@@ -46,18 +46,24 @@ jobs:
           https://raw.githubusercontent.com/xcom024/vless/refs/heads/main/list.txt
           EOF
 
-          # 3. Качаем всё по списку (БЕЗ бэкслешей перед $)
-          touch white_list.txt
+          # 3. Скачиваем всё в сырой файл
+          touch raw_list.txt
           while read -r line; do
-            echo "Качаю: $line"
-            curl -sSL --connect-timeout 10 --max-time 15 -A "v2rayNG/1.8.5" "$line" >> white_list.txt || echo "Ошибка: $line"
-            echo "" >> white_list.txt
+            echo "Загрузка: $line"
+            curl -sSL --connect-timeout 8 --max-time 12 -A "v2rayNG/1.8.5" "$line" >> raw_list.txt || echo "Пропуск: $line"
           done < sources.txt
           
-          echo "Сборка завершена!"
-          wc -l white_list.txt
+          # 4. ЧИСТКА: убираем пустые строки, пробелы и удаляем ДУБЛИКАТЫ (sort -u)
+          grep -v '^[[:space:]]*$' raw_list.txt | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sort -u > white_list.txt
+          
+          echo "📊 Итоги сборки:"
+          echo "Было всего строк: $(wc -l < raw_list.txt)"
+          echo "Осталось уникальных: $(wc -l < white_list.txt)"
 
-      - name: 🚀 Загрузка в Облако Mail.ru
+      - name: 🚀 Отправка очищенных файлов в Облако Mail.ru
         run: |
+          # Загружаем основной мост
           curl -T stella_bridge.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/stella_bridge.txt"
+          
+          # Загружаем чистый Белый Гриб
           curl -T white_list.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/white_list.txt"
