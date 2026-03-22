@@ -1,4 +1,4 @@
-import os, json, subprocess, time, socket, logging, concurrent.futures, uuid
+import os, json, subprocess, time, socket, logging, concurrent.futures, uuid, re
 from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
@@ -6,6 +6,13 @@ TEST_URL = "http://cp.cloudflare.com/"
 TIMEOUT = 5
 THREADS = 40 
 XRAY_PATH = "./xray"
+
+# --- КУЗНИЦА: 10 БЕЛЫХ ДОМЕНОВ ---
+WHITE_DOMAINS = [
+    "ads.x5.ru", "gosuslugi.ru", "vk.com", "ozon.ru", 
+    "tass.ru", "ya.ru", "mail.ru", "avito.ru", 
+    "sberbank.ru", "wildberries.ru"
+]
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -25,7 +32,7 @@ def parse_vless(link: str) -> Optional[dict]:
             "sni": params.get("sni", [""])[0], "security": params.get("security", ["none"])[0],
             "type": params.get("type", ["tcp"])[0], "fp": params.get("fp", [""])[0],
             "pbk": params.get("pbk", [""])[0], "sid": params.get("sid", [""])[0],
-            "flow": params.get("flow", [""])[0]
+            "flow": params.get("flow", [""])[0], "raw_link": link
         }
     except: return None
 
@@ -34,7 +41,6 @@ def test_worker(vless_link: str, task_id: int) -> Optional[str]:
     listen_port = 10000 + (task_id % 15000)
     data = parse_vless(vless_link)
     if not data: return None
-
     config = {
         "log": {"loglevel": "none"},
         "inbounds": [{"port": listen_port, "protocol": "socks", "settings": {"udp": True}}],
@@ -48,7 +54,6 @@ def test_worker(vless_link: str, task_id: int) -> Optional[str]:
             }
         }]
     }
-
     cfg_path = f"config_{unique_id}.json"
     proc = None
     try:
@@ -60,7 +65,6 @@ def test_worker(vless_link: str, task_id: int) -> Optional[str]:
         else: return None
         res = subprocess.run(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "--proxy", f"socks5://127.0.0.1:{listen_port}", TEST_URL, "--max-time", str(TIMEOUT)], capture_output=True, text=True)
         if res.stdout.strip() in ["200", "204"]:
-            logging.info(f"OK: {data['address']}")
             return vless_link
     except: pass
     finally:
@@ -75,17 +79,31 @@ def main():
     if not os.path.exists("distributor.txt"): return
     with open("distributor.txt", "r") as f:
         proxies = list(set([l.strip() for l in f.readlines() if l.strip()]))
-    logging.info(f"🚀 Стелла исправляет гонку и тестит {len(proxies)} прокси...")
+    
+    logging.info(f"💎 Стелла проверяет {len(proxies)} прокси через X-ray...")
     valid = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=THREADS) as executor:
         futures = {executor.submit(test_worker, proxies[i], i): i for i in range(len(proxies))}
         for future in concurrent.futures.as_completed(futures):
-            try:
-                res = future.result()
-                if res: valid.append(res)
-            except: pass
-    with open("distributor.txt", "w") as f: f.write("\n".join(valid))
-    logging.info(f"💎 Финал: {len(valid)} живых.")
+            res = future.result()
+            if res: valid.append(res)
+
+    logging.info(f"✨ Найдено {len(valid)} живых. Начинаю ковать SNI...")
+    
+    final_forged = []
+    for link in valid:
+        # Добавляем оригинал
+        final_forged.append(link)
+        # Очищаем от старого SNI и принудительно ставим маскировку
+        base = re.sub(r"sni=[^&?#]+", "", link).replace("&&", "&").replace("?&", "?").rstrip("&?")
+        for domain in WHITE_DOMAINS:
+            sep = "&" if "?" in base else "?"
+            forged = f"{base}{sep}sni={domain}&fp=chrome"
+            final_forged.append(forged.replace("?&", "?").replace("&&", "&"))
+
+    with open("distributor.txt", "w") as f:
+        f.write("\n".join(list(set(final_forged))))
+    logging.info(f"🚀 Кузница завершена! В базе {len(final_forged)} замаскированных конфигов.")
 
 if __name__ == '__main__':
     main()
