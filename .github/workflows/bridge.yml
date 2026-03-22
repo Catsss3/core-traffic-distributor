@@ -2,7 +2,7 @@ name: Cloudflare to MailRu Bridge
 
 on:
   schedule:
-    # Обновляем каждые 12 часов, чтобы списки всегда были свежими
+    # Запуск каждые 12 часов для обновления списков
     - cron: '0 */12 * * *' 
   workflow_dispatch: {} 
 
@@ -10,19 +10,29 @@ jobs:
   transfer:
     runs-on: ubuntu-latest
     steps:
-      - name: 🛰️ Download from Cloudflare
+      - name: 🛰️ Сборка "Белого Гриба" по частям
         run: |
           # 1. Забираем основной общий список
-          curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_proxies.txt
+          curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_bridge.txt
           
-          # 2. Забираем наш новый "Белый Гриб"
-          curl -L "https://stella-white-list.vehesslav.workers.dev" -o white_list.txt
+          # 2. Собираем 4 части Белого Гриба
+          echo "Качаем части..."
+          curl -L "https://stella-white-1.vehesslav.workers.dev" > w1.txt
+          curl -L "https://stella-white-2.vehesslav.workers.dev" > w2.txt
+          curl -L "https://stella-white-3.vehesslav.workers.dev" > w3.txt
+          curl -L "https://stella-white-4.vehesslav.workers.dev" > w4.txt
           
-      - name: 🚀 Upload to Mail.ru Cloud
+          # 3. Склеиваем их в один большой файл white_list.txt
+          cat w1.txt w2.txt w3.txt w4.txt > white_list.txt
+          
+          # Проверка: сколько строк получилось
+          echo "Итого строк в белом списке:"
+          wc -l white_list.txt
+
+      - name: 🚀 Отправка в Облако Mail.ru
         run: |
-          # Отправляем оба файла в Облако через WebDAV
-          # Основной список
-          curl -T stella_proxies.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/stella_bridge.txt"
+          # Загружаем основной мост
+          curl -T stella_bridge.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/stella_bridge.txt"
           
-          # Список "Белый Список"
+          # Загружаем собранный Белый Гриб
           curl -T white_list.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/white_list.txt"
