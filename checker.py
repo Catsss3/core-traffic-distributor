@@ -1,4 +1,4 @@
-import os, json, subprocess, time, socket, logging, concurrent.futures, uuid, re
+import os, json, subprocess, time, socket, logging, concurrent.futures, uuid, re, random
 from typing import Optional
 from urllib.parse import urlparse, parse_qs
 
@@ -7,11 +7,12 @@ TIMEOUT = 5
 THREADS = 40 
 XRAY_PATH = "./xray"
 
-# --- КУЗНИЦА: 10 БЕЛЫХ ДОМЕНОВ ---
-WHITE_DOMAINS = [
-    "ads.x5.ru", "gosuslugi.ru", "vk.com", "ozon.ru", 
-    "tass.ru", "ya.ru", "mail.ru", "avito.ru", 
-    "sberbank.ru", "wildberries.ru"
+# --- РАСШИРЕННЫЙ ПУЛ ДЛЯ РОТАЦИИ (Защита от самобана) ---
+WIDE_SNI_POOL = [
+    "vk.com", "gosuslugi.ru", "ads.x5.ru", "ozon.ru", "tass.ru", 
+    "ya.ru", "mail.ru", "avito.ru", "sberbank.ru", "wildberries.ru",
+    "edu.ru", "nalog.gov.ru", "rt.ru", "rbc.ru", "mos.ru",
+    "mvideo.ru", "dzen.ru", "ok.ru", "hh.ru", "cian.ru"
 ]
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -88,22 +89,38 @@ def main():
             res = future.result()
             if res: valid.append(res)
 
-    logging.info(f"✨ Найдено {len(valid)} живых. Начинаю ковать SNI...")
+    logging.info(f"✨ Найдено {len(valid)} живых. Начинаю умную ротацию SNI...")
     
+    # ПЕРЕМЕШИВАЕМ, чтобы выборка была честной
+    random.shuffle(valid)
+    
+    # Лимитируем количество исходников до 1500, чтобы итоговый файл был ~6000 строк
+    sample_size = min(len(valid), 1500)
+    diverse_valid = valid[:sample_size]
+
     final_forged = []
-    for link in valid:
+    for link in diverse_valid:
         # Добавляем оригинал
         final_forged.append(link)
-        # Очищаем от старого SNI и принудительно ставим маскировку
+        
+        # Очищаем базу ссылки от старого SNI
         base = re.sub(r"sni=[^&?#]+", "", link).replace("&&", "&").replace("?&", "?").rstrip("&?")
-        for domain in WHITE_DOMAINS:
+        
+        # Выбираем 3 РАНДОМНЫХ SNI из 20 возможных для каждой ссылки
+        chosen_snis = random.sample(WIDE_SNI_POOL, 3)
+        
+        for domain in chosen_snis:
             sep = "&" if "?" in base else "?"
             forged = f"{base}{sep}sni={domain}&fp=chrome"
+            # Финальная чистка строки от двойных символов
             final_forged.append(forged.replace("?&", "?").replace("&&", "&"))
 
     with open("distributor.txt", "w") as f:
-        f.write("\n".join(list(set(final_forged))))
-    logging.info(f"🚀 Кузница завершена! В базе {len(final_forged)} замаскированных конфигов.")
+        # Пишем уникальные строки (set уберет возможные дубли)
+        unique_final = list(set(final_forged))
+        f.write("\n".join(unique_final))
+        
+    logging.info(f"🚀 Кузница завершена! В базе {len(unique_final)} замаскированных конфигов. Ротация на {len(WIDE_SNI_POOL)} доменах.")
 
 if __name__ == '__main__':
     main()
