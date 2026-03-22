@@ -34,16 +34,26 @@ jobs:
       - name: Run Checker (URL Test)
         run: python checker.py
 
+      - name: 🌉 Bridge: Gather from Stella-Worker
+        run: |
+          # 1. Стучимся к нашему воркеру в Cloudflare и забираем улов
+          curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_cloud.txt || echo "Worker skip"
+          
+          # 2. Склеиваем: сначала 6000 проверенных, потом данные из Клауда
+          cat stella_cloud.txt >> distributor.txt
+          
+          # 3. Убираем дубликаты, чтобы Nekobox не сошел с ума
+          sort -u distributor.txt -o distributor.txt
+
       - name: Deploy to GitHub
         run: |
           git config --global user.name "web-core-bot"
           git config --global user.email "bot@github.com"
           git add .
-          git commit -m "🎯 Stella: Full Sync & URL Test (48h Cycle) ✨" || exit 0
+          git commit -m "🎯 Stella: Full Sync & Cloud Bridge (48h Cycle) ✨" || exit 0
           git push origin main
 
       - name: 🚀 Push to Mail.ru Cloud (White List)
         run: |
-          # Отправляем файл через WebDAV. 
-          # Файл появится в корне твоего Облака под именем distributor.txt
+          # Отправляем итоговый файл в Облако через твой секретный ключ
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
