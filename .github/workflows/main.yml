@@ -6,6 +6,7 @@ on:
     - cron: '0 4 */2 * *' 
   workflow_dispatch: {}
 
+# Защита от дублей, если вдруг запуск затянется
 concurrency:
   group: core-sync
   cancel-in-progress: true
@@ -36,24 +37,25 @@ jobs:
 
       - name: 🌉 Bridge: Gather from Stella-Worker
         run: |
-          # 1. Стучимся к нашему воркеру в Cloudflare и забираем улов
+          # Забираем улов из Cloudflare
           curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_cloud.txt || echo "Worker skip"
           
-          # 2. Склеиваем: сначала 6000 проверенных, потом данные из Клауда
-          cat stella_cloud.txt >> distributor.txt
-          
-          # 3. Убираем дубликаты, чтобы Nekobox не сошел с ума
-          sort -u distributor.txt -o distributor.txt
+          # Если файл скачался, склеиваем его с основным списком и чистим дубли
+          if [ -f stella_cloud.txt ]; then
+            cat stella_cloud.txt >> distributor.txt
+            sort -u distributor.txt -o distributor.txt
+          fi
 
       - name: Deploy to GitHub
         run: |
           git config --global user.name "web-core-bot"
           git config --global user.email "bot@github.com"
           git add .
+          # exit 0 гарантирует, что билд не упадет, если ничего нового не нашлось
           git commit -m "🎯 Stella: Full Sync & Cloud Bridge (48h Cycle) ✨" || exit 0
           git push origin main
 
       - name: 🚀 Push to Mail.ru Cloud (White List)
         run: |
-          # Отправляем итоговый файл в Облако через твой секретный ключ
+          # Отправляем итоговый большой файл в Облако
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
