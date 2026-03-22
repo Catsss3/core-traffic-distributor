@@ -2,7 +2,7 @@ name: Cloudflare to MailRu Bridge
 
 on:
   schedule:
-    # Запуск каждые 12 часов
+    # Обновляем каждые 12 часов, чтобы списки всегда были свежими
     - cron: '0 */12 * * *' 
   workflow_dispatch: {} 
 
@@ -12,9 +12,17 @@ jobs:
     steps:
       - name: 🛰️ Download from Cloudflare
         run: |
+          # 1. Забираем основной общий список
           curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_proxies.txt
+          
+          # 2. Забираем наш новый "Белый Гриб"
+          curl -L "https://stella-white-list.vehesslav.workers.dev" -o white_list.txt
           
       - name: 🚀 Upload to Mail.ru Cloud
         run: |
-          # Используем другое имя файла, чтобы не мешать основному маину
+          # Отправляем оба файла в Облако через WebDAV
+          # Основной список
           curl -T stella_proxies.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/stella_bridge.txt"
+          
+          # Список "Белый Список"
+          curl -T white_list.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/white_list.txt"
