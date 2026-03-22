@@ -2,11 +2,10 @@ name: Sync Logic
 
 on:
   schedule:
-    # 🌙 Запуск в 04:00 утра каждые два дня (раз в 48 часов)
+    # 🌙 Запуск в 04:00 утра каждые два дня
     - cron: '0 4 */2 * *' 
   workflow_dispatch: {}
 
-# Защита от дублей, если вдруг запуск затянется
 concurrency:
   group: core-sync
   cancel-in-progress: true
@@ -35,24 +34,16 @@ jobs:
       - name: Run Checker (URL Test)
         run: python checker.py
 
-      - name: 🌉 Bridge: Gather from Stella-Worker
-        run: |
-          curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_cloud.txt || echo "Worker skip"
-          if [ -f stella_cloud.txt ]; then
-            cat stella_cloud.txt >> distributor.txt
-            sort -u distributor.txt -o distributor.txt
-          fi
-
-      - name: Deploy Results
+      - name: Deploy to GitHub
         run: |
           git config --global user.name "web-core-bot"
           git config --global user.email "bot@github.com"
           git add .
-          # exit 0 гарантирует, что билд не упадет, если ничего нового не нашлось
-          git commit -m "🎯 Stella: Full Sync & Cloud Bridge (48h Cycle) ✨" || exit 0
+          git commit -m "🎯 Stella: Full Sync & URL Test (48h Cycle) ✨" || exit 0
           git push origin main
 
       - name: 🚀 Push to Mail.ru Cloud (White List)
         run: |
-          # Отправляем итоговый файл в Облако через твой секретный ключ
+          # Отправляем файл через WebDAV. 
+          # Файл появится в корне твоего Облака под именем distributor.txt
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
