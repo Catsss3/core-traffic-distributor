@@ -11,10 +11,10 @@ jobs:
     steps:
       - name: 🍄 Сборка "Белого Гриба" напрямую
         run: |
-          # 1. Скачиваем основной мост (пусть Cloudflare отдаст хоть что-то)
+          # 1. Основной мост из Cloudflare (уже работает, 3.9MB!)
           curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_bridge.txt || touch stella_bridge.txt
           
-          # 2. Создаем список ссылок из твоего файла bely_grib.docx
+          # 2. Создаем список ссылок
           cat <<EOF > sources.txt
           https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Cable.txt
           https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt
@@ -46,11 +46,11 @@ jobs:
           https://raw.githubusercontent.com/xcom024/vless/refs/heads/main/list.txt
           EOF
 
-          # 3. Качаем всё по списку прямо здесь
+          # 3. Качаем всё по списку (БЕЗ бэкслешей перед $)
           touch white_list.txt
-          while read -r url; do
-            echo "Обработка: \$url"
-            curl -sSL --connect-timeout 10 --max-time 15 -A "v2rayNG/1.8.5" "\$url" >> white_list.txt || echo "Пропуск: \$url"
+          while read -r line; do
+            echo "Качаю: $line"
+            curl -sSL --connect-timeout 10 --max-time 15 -A "v2rayNG/1.8.5" "$line" >> white_list.txt || echo "Ошибка: $line"
             echo "" >> white_list.txt
           done < sources.txt
           
