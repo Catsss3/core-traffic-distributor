@@ -46,32 +46,31 @@ jobs:
           done < sources_v2ray.txt
           grep -v '^[[:space:]]*$' raw_v2ray.txt | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sort -u > white_list.txt
 
-      - name: ✈️ Сборка Telegram MTProto (Парсинг Каналов)
+      - name: ✈️ Сборка Telegram MTProto (Агрегаторы + Каналы)
         run: |
-          # Собираем ссылки на веб-страницы каналов
+          touch raw_mtproto.txt
+          
+          # 1. Агрегаторы (самая жирная база)
+          echo "Качаем из агрегаторов..."
+          curl -sSL "https://mtpro.xyz/api/?type=mtproto" >> raw_mtproto.txt || true
+          curl -sSL "https://raw.githubusercontent.com/Bypass-888/MTProto/main/MTProto.txt" >> raw_mtproto.txt || true
+          curl -sSL "https://raw.githubusercontent.com/clash-verge-rev/mtproto-proxy/main/mtproto.txt" >> raw_mtproto.txt || true
+          curl -sSL "https://raw.githubusercontent.com/SadeghHayeri/MTProto-Proxy/main/MTProto.txt" >> raw_mtproto.txt || true
+          
+          # 2. Пылесосим веб-каналы (оставляем для свежести)
           cat <<EOF > channels.txt
           https://t.me/s/ProxyMTProto
           https://t.me/s/TelMTProto
           https://t.me/s/Mypublicproxy
           https://t.me/s/MTProto_Proxy
-          https://t.me/s/Proxy_MTProto_Telegram
           https://t.me/s/MTP_roto
           https://t.me/s/VipProxy
-          https://t.me/s/Proxy_Telegrm
           EOF
-          
-          touch raw_mtproto.txt
-          # Сначала старые добрые файлы из GitHub
-          curl -sSL https://raw.githubusercontent.com/Argh94/Proxy-List/main/MTProto.txt >> raw_mtproto.txt
-          curl -sSL https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt >> raw_mtproto.txt
-          
-          # Теперь "пылесосим" веб-версии каналов
           while read -r url; do
-            echo "Парсим канал: $url"
             curl -sSL --connect-timeout 10 -A "Mozilla/5.0" "$url" | grep -oE "tg://proxy\?server=[^\"' ]+" >> raw_mtproto.txt || true
           done < channels.txt
           
-          # Чистим, удаляем дубликаты
+          # 3. Чистим и исправляем кодировку
           grep -E "tg://proxy" raw_mtproto.txt | sed 's/&amp;/\&/g' | sort -u > mtproto.txt
           echo "Итого уникальных MTProto ключей: $(wc -l < mtproto.txt)"
 
