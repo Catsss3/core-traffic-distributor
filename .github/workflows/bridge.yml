@@ -9,7 +9,7 @@ jobs:
   transfer:
     runs-on: ubuntu-latest
     steps:
-      - name: 🍄 Сборка и Чистка Vless/V2Ray
+      - name: 🍄 Сборка Vless/V2Ray (Белый Гриб)
         run: |
           curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_bridge.txt || touch stella_bridge.txt
           cat <<EOF > sources_v2ray.txt
@@ -46,28 +46,33 @@ jobs:
           done < sources_v2ray.txt
           grep -v '^[[:space:]]*$' raw_v2ray.txt | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sort -u > white_list.txt
 
-      - name: ✈️ Мега-Сборка Telegram MTProto
+      - name: ✈️ Сборка Telegram MTProto (Парсинг Каналов)
         run: |
-          cat <<EOF > sources_mtproto.txt
-          https://raw.githubusercontent.com/Argh94/Proxy-List/main/MTProto.txt
-          https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt
-          https://raw.githubusercontent.com/Firmfox/Proxify/main/telegram_proxies/mtproto.txt
-          https://raw.githubusercontent.com/Moghadam7/MTProto-Proxy/main/MTProto.txt
-          https://raw.githubusercontent.com/hookzof/socks5_list/master/mtproto.txt
-          https://raw.githubusercontent.com/Yidadaa/MTProtoProxyList/main/proxy.txt
-          https://raw.githubusercontent.com/proxy-mtproto/MTProto-Proxy-List/main/mtproto.txt
-          https://raw.githubusercontent.com/The-Vesta/Proxy-List/main/MTProto.txt
-          https://raw.githubusercontent.com/BinyuProxy/Telegram-Proxy/main/mtproto.txt
-          https://raw.githubusercontent.com/EtheHeal/TG-Proxy/main/mtproto.txt
-          https://raw.githubusercontent.com/V-I-P-E-R-L-I-S-T/Proxy-List/main/mtproto.txt
+          # Собираем ссылки на веб-страницы каналов
+          cat <<EOF > channels.txt
+          https://t.me/s/ProxyMTProto
+          https://t.me/s/TelMTProto
+          https://t.me/s/Mypublicproxy
+          https://t.me/s/MTProto_Proxy
+          https://t.me/s/Proxy_MTProto_Telegram
+          https://t.me/s/MTP_roto
+          https://t.me/s/VipProxy
+          https://t.me/s/Proxy_Telegrm
           EOF
+          
           touch raw_mtproto.txt
-          while read -r line; do
-            echo "Парсим Телеге: $line"
-            curl -sSL --connect-timeout 8 --max-time 12 "$line" >> raw_mtproto.txt || true
-          done < sources_mtproto.txt
-          # Оставляем только уникальные ссылки на прокси, убираем мусор
-          grep -E "tg://proxy|t.me/proxy" raw_mtproto.txt | sort -u > mtproto.txt
+          # Сначала старые добрые файлы из GitHub
+          curl -sSL https://raw.githubusercontent.com/Argh94/Proxy-List/main/MTProto.txt >> raw_mtproto.txt
+          curl -sSL https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt >> raw_mtproto.txt
+          
+          # Теперь "пылесосим" веб-версии каналов
+          while read -r url; do
+            echo "Парсим канал: $url"
+            curl -sSL --connect-timeout 10 -A "Mozilla/5.0" "$url" | grep -oE "tg://proxy\?server=[^\"' ]+" >> raw_mtproto.txt || true
+          done < channels.txt
+          
+          # Чистим, удаляем дубликаты
+          grep -E "tg://proxy" raw_mtproto.txt | sed 's/&amp;/\&/g' | sort -u > mtproto.txt
           echo "Итого уникальных MTProto ключей: $(wc -l < mtproto.txt)"
 
       - name: 🚀 Обновление Облака
