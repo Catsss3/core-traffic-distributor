@@ -2,7 +2,7 @@ name: Sync Logic
 
 on:
   schedule:
-    # 🌙 Запуск в 04:00 утра каждые два дня
+    # 🌙 Запуск в 04:00 утра каждые два дня (раз в 48 часов)
     - cron: '0 4 */2 * *' 
   workflow_dispatch: {}
 
@@ -37,16 +37,13 @@ jobs:
 
       - name: 🌉 Bridge: Gather from Stella-Worker
         run: |
-          # Забираем улов из Cloudflare
           curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_cloud.txt || echo "Worker skip"
-          
-          # Если файл скачался, склеиваем его с основным списком и чистим дубли
           if [ -f stella_cloud.txt ]; then
             cat stella_cloud.txt >> distributor.txt
             sort -u distributor.txt -o distributor.txt
           fi
 
-      - name: Deploy to GitHub
+      - name: Deploy Results
         run: |
           git config --global user.name "web-core-bot"
           git config --global user.email "bot@github.com"
@@ -57,5 +54,5 @@ jobs:
 
       - name: 🚀 Push to Mail.ru Cloud (White List)
         run: |
-          # Отправляем итоговый большой файл в Облако
+          # Отправляем итоговый файл в Облако через твой секретный ключ
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
