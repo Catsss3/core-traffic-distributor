@@ -1,14 +1,9 @@
-name: Sync Logic
+name: 🚀 Stella: Core Sync (Daily)
 
 on:
   schedule:
-    # 🌙 Запуск в 04:00 утра каждые два дня
-    - cron: '0 4 */2 * *' 
+    - cron: '0 3 * * *' # Раз в сутки в 03:00 UTC
   workflow_dispatch: {}
-
-concurrency:
-  group: core-sync
-  cancel-in-progress: true
 
 jobs:
   build:
@@ -17,33 +12,33 @@ jobs:
       contents: write
     
     steps:
-      - name: Checkout
+      - name: 🛰 Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
-      - name: Install dependencies
-        run: pip install --quiet requests aiohttp
+      - name: 📦 Install dependencies
+        run: pip install requests
 
-      - name: Run Engine (Gathering)
+      - name: ⚙️ Run Engine (Collect)
         run: python engine.py
 
-      - name: Run Checker (URL Test)
-        run: python checker.py
-
-      - name: Deploy to GitHub
+      - name: 🛡️ Run Checker (Sing-box + Forge)
         run: |
-          git config --global user.name "web-core-bot"
-          git config --global user.email "bot@github.com"
-          git add .
-          git commit -m "🎯 Stella: Full Sync & URL Test (48h Cycle) ✨" || exit 0
+          chmod +x sing-box
+          python checker.py
+
+      - name: 📤 Push to GitHub
+        run: |
+          git config --global user.name "Catsss3-Bot"
+          git config --global user.email "vehesslav@gmail.com"
+          git add distributor.txt
+          git commit -m "🎯 Stella: Daily Sync & Forge ✨" || exit 0
           git push origin main
 
-      - name: 🚀 Push to Mail.ru Cloud (White List)
+      - name: ☁️ Push to Mail.ru Cloud
         run: |
-          # Отправляем файл через WebDAV. 
-          # Файл появится в корне твоего Облака под именем distributor.txt
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
