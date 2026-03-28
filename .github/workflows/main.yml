@@ -1,49 +1,28 @@
 name: Stella-Sync
-
 on:
-  schedule:
-    - cron: '0 3 * * *'
   workflow_dispatch: {}
-
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
     env:
       CHECK_TIMEOUT: 15
       CHECK_THREADS: 50
       CHECK_URL: "https://www.google.com/generate_204"
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
-      - name: Install dependencies
-        run: pip install requests
-
-      - name: Run Engine
-        run: python engine.py
-
-      - name: Run Soft Checker
-        run: |
+      - run: pip install requests
+      - run: python engine.py
+      - run: |
           chmod +x sing-box
           python checker.py
-
-      - name: Push GitHub
-        run: |
+      - run: |
           git config --global user.name "Catsss3-Bot"
           git config --global user.email "vehesslav@gmail.com"
           git add distributor.txt
-          git commit -m "🚀 Docs-inspired update: YAML settings applied" || exit 0
+          git commit -m "🎯 Full Soft Update" || exit 0
           git push origin main
-
-      - name: Push Cloud
-        run: |
+      - run: |
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
