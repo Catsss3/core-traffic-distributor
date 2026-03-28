@@ -1,8 +1,6 @@
-name: Stella-Sync
+name: Stella-Raw-Dump
 
 on:
-  schedule:
-    - cron: '0 3 * * *'
   workflow_dispatch: {}
 
 jobs:
@@ -15,30 +13,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup-Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install-Deps
+      - name: Install dependencies
         run: pip install requests
 
-      - name: Run-Engine
+      - name: Run Engine (Collect 7k+)
         run: python engine.py
 
-      - name: Run-Checker
-        run: |
-          chmod +x sing-box
-          python checker.py
-
-      - name: Push-GitHub
+      - name: Push to GitHub
         run: |
           git config --global user.name "Catsss3-Bot"
           git config --global user.email "vehesslav@gmail.com"
           git add distributor.txt
-          git commit -m "Sync update" || exit 0
+          git commit -m "📦 RAW Dump: Full list for Exclave" || exit 0
           git push origin main
 
-      - name: Push-MailRu
+      - name: Push to Mail.ru Cloud
         run: |
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
