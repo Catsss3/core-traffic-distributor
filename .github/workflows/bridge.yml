@@ -1,17 +1,22 @@
-name: Cloudflare to MailRu Bridge
+name: 🌉 Stella: Cloud Bridge (Daily)
 
 on:
   schedule:
-    - cron: '0 */12 * * *' 
-  workflow_dispatch: {} 
+    - cron: '0 5 * * *' # Запуск раз в сутки в 05:00 UTC (через 2 часа после основного)
+  workflow_dispatch: {}
 
 jobs:
   transfer:
     runs-on: ubuntu-latest
     steps:
-      - name: 🍄 Сборка Vless/V2Ray (Белый Гриб)
+      - name: 🛰 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🍄 Сборка White List (Белый Список)
         run: |
+          # Собираем базу из твоих проверенных источников
           curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_bridge.txt || touch stella_bridge.txt
+          
           cat <<EOF > sources_v2ray.txt
           https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Cable.txt
           https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt
@@ -20,64 +25,37 @@ jobs:
           https://raw.githubusercontent.com/zieng2/wl/main/vless_lite.txt
           https://raw.githubusercontent.com/zieng2/wl/main/vless_universal.txt
           https://raw.githubusercontent.com/LowiKLive/BypassWhitelistRu/refs/heads/main/WhiteList-Bypass_Ru.txt
-          https://raw.githubusercontent.com/AvenCores/goida-vpn-configs/refs/heads/main/githubmirror/26.txt
-          https://raw.githubusercontent.com/55prosek-lgtm/vpn_config_for_russia/refs/heads/main/whitelist.txt
           https://raw.githubusercontent.com/vlesscollector/vlesscollector/refs/heads/main/vless_configs.txt
-          https://raw.githubusercontent.com/Kirillo4ka/vpn-configs-for-russia/refs/heads/main/Vless-Rus-Mobile-White-List.txt
-          https://raw.githubusercontent.com/whoahaow/rjsxrd/refs/heads/main/githubmirror/bypass-unsecure/bypass-unsecure-all.txt
           https://raw.githubusercontent.com/FLEXIY0/matryoshka-vpn/main/configs/russia_whitelist.txt
-          https://bp.wl.free.nf/confs/selected.txt
-          https://bp.wl.free.nf/confs/wl.txt
-          https://bp.wl.free.nf/confs/merged.txt
-          https://raw.githubusercontent.com/SilentGhostCodes/WhiteListVpn/refs/heads/main/config.txt
-          https://etoneya.a9fm.site/whitelist
-          https://raw.githubusercontent.com/LimeHi/LimeVPN/refs/heads/main/LimeVPN.txt
-          https://raw.githubusercontent.com/officialdakari/psychic-octo-tribble/refs/heads/main/subwl.txt
-          https://raw.githubusercontent.com/RKPchannel/RKP_bypass_configs/refs/heads/main/configs
-          https://raw.githubusercontent.com/Ai123999/WhiteeListSub/refs/heads/main/whitelistkeys
-          https://raw.githubusercontent.com/Ai123999/WhiteKeys/refs/heads/main/WhiteKeys
-          https://storage.yandexcloud.net/cid-vpn/whitelist.txt
-          https://raw.githubusercontent.com/FalerChannel/FalerChannel/refs/heads/main/configs
-          https://raw.githubusercontent.com/xcom024/vless/refs/heads/main/list.txt
           EOF
+
           touch raw_v2ray.txt
           while read -r line; do
             curl -sSL --connect-timeout 8 --max-time 12 -A "v2rayNG/1.8.5" "$line" >> raw_v2ray.txt || true
           done < sources_v2ray.txt
-          grep -v '^[[:space:]]*$' raw_v2ray.txt | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sort -u > white_list.txt
-
-      - name: ✈️ Сборка Telegram MTProto (Только Проверенный GitHub)
-        run: |
-          touch raw_mtproto.txt
           
-          # Список надежных источников GitHub
+          grep -v '^[[:space:]]*$' raw_v2ray.txt | sort -u > white_list.txt
+
+      - name: ✈️ Сборка Telegram MTProto
+        run: |
           cat <<EOF > sources_mtproto.txt
           https://raw.githubusercontent.com/Argh94/Proxy-List/main/MTProto.txt
           https://raw.githubusercontent.com/SoliSpirit/mtproto/master/all_proxies.txt
           https://raw.githubusercontent.com/Firmfox/Proxify/main/telegram_proxies/mtproto.txt
           https://raw.githubusercontent.com/Moghadam7/MTProto-Proxy/main/MTProto.txt
           https://raw.githubusercontent.com/hookzof/socks5_list/master/mtproto.txt
-          https://raw.githubusercontent.com/Yidadaa/MTProtoProxyList/main/proxy.txt
           https://raw.githubusercontent.com/Bypass-888/MTProto/main/MTProto.txt
-          https://raw.githubusercontent.com/The-Vesta/Proxy-List/main/MTProto.txt
-          https://raw.githubusercontent.com/BinyuProxy/Telegram-Proxy/main/mtproto.txt
-          https://raw.githubusercontent.com/V-I-P-E-R-L-I-S-T/Proxy-List/main/mtproto.txt
-          https://raw.githubusercontent.com/clash-verge-rev/mtproto-proxy/main/mtproto.txt
           EOF
 
+          touch raw_mtproto.txt
           while read -r line; do
-            echo "Качаю MTProto: $line"
             curl -sSL --connect-timeout 8 --max-time 12 "$line" >> raw_mtproto.txt || true
-            echo "" >> raw_mtproto.txt
           done < sources_mtproto.txt
           
-          # Оставляем только уникальные рабочие ссылки
           grep -E "tg://proxy" raw_mtproto.txt | sort -u > mtproto.txt
-          echo "Итого уникальных MTProto ключей: $(wc -l < mtproto.txt)"
 
-      - name: 🚀 Обновление Облака
+      - name: 🚀 Обновление Облака Mail.ru
         run: |
-          curl -T stella_bridge.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/stella_bridge.txt"
+          # Загружаем файлы в соответствующие места
           curl -T white_list.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/white_list.txt"
-          curl -X MKCOL --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/telegram/" || true
           curl -T mtproto.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/telegram/mtproto.txt"
