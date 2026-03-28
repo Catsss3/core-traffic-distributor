@@ -1,22 +1,20 @@
-name: 🌉 Stella: Cloud Bridge (Daily)
+name: Stella-Bridge
 
 on:
   schedule:
-    - cron: '0 5 * * *' # Запуск раз в сутки в 05:00 UTC (через 2 часа после основного)
+    - cron: '0 5 * * *'
   workflow_dispatch: {}
 
 jobs:
   transfer:
     runs-on: ubuntu-latest
     steps:
-      - name: 🛰 Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🍄 Сборка White List (Белый Список)
+      - name: Build-White-List
         run: |
-          # Собираем базу из твоих проверенных источников
           curl -L "https://stella-proxy-all.vehesslav.workers.dev" -o stella_bridge.txt || touch stella_bridge.txt
-          
           cat <<EOF > sources_v2ray.txt
           https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Cable.txt
           https://raw.githubusercontent.com/igareck/vpn-configs-for-russia/refs/heads/main/Vless-Reality-White-Lists-Rus-Mobile.txt
@@ -28,15 +26,13 @@ jobs:
           https://raw.githubusercontent.com/vlesscollector/vlesscollector/refs/heads/main/vless_configs.txt
           https://raw.githubusercontent.com/FLEXIY0/matryoshka-vpn/main/configs/russia_whitelist.txt
           EOF
-
           touch raw_v2ray.txt
           while read -r line; do
             curl -sSL --connect-timeout 8 --max-time 12 -A "v2rayNG/1.8.5" "$line" >> raw_v2ray.txt || true
           done < sources_v2ray.txt
-          
           grep -v '^[[:space:]]*$' raw_v2ray.txt | sort -u > white_list.txt
 
-      - name: ✈️ Сборка Telegram MTProto
+      - name: Build-MTProto
         run: |
           cat <<EOF > sources_mtproto.txt
           https://raw.githubusercontent.com/Argh94/Proxy-List/main/MTProto.txt
@@ -46,16 +42,13 @@ jobs:
           https://raw.githubusercontent.com/hookzof/socks5_list/master/mtproto.txt
           https://raw.githubusercontent.com/Bypass-888/MTProto/main/MTProto.txt
           EOF
-
           touch raw_mtproto.txt
           while read -r line; do
             curl -sSL --connect-timeout 8 --max-time 12 "$line" >> raw_mtproto.txt || true
           done < sources_mtproto.txt
-          
           grep -E "tg://proxy" raw_mtproto.txt | sort -u > mtproto.txt
 
-      - name: 🚀 Обновление Облака Mail.ru
+      - name: Upload-to-Cloud
         run: |
-          # Загружаем файлы в соответствующие места
           curl -T white_list.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/white_list.txt"
           curl -T mtproto.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/telegram/mtproto.txt"
