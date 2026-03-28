@@ -1,6 +1,10 @@
 name: Stella-Sync
+
 on:
+  schedule:
+    - cron: '0 3 * * *'  # 03:00 UTC (6 утра МСК)
   workflow_dispatch: {}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,8 +25,9 @@ jobs:
       - run: |
           git config --global user.name "Catsss3-Bot"
           git config --global user.email "vehesslav@gmail.com"
+          git add .github/workflows/main.yml
           git add distributor.txt
-          git commit -m "🎯 Full Soft Update" || exit 0
+          git commit -m "⏰ Daily schedule restored (03:00 UTC)" || exit 0
           git push origin main
       - run: |
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
