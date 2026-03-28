@@ -1,8 +1,8 @@
-name: 🚀 Stella: Core Sync (Daily)
+name: Stella-Sync
 
 on:
   schedule:
-    - cron: '0 3 * * *' # Раз в сутки в 03:00 UTC
+    - cron: '0 3 * * *'
   workflow_dispatch: {}
 
 jobs:
@@ -12,33 +12,33 @@ jobs:
       contents: write
     
     steps:
-      - name: 🛰 Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🐍 Setup Python
+      - name: Setup-Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: 📦 Install dependencies
+      - name: Install-Deps
         run: pip install requests
 
-      - name: ⚙️ Run Engine (Collect)
+      - name: Run-Engine
         run: python engine.py
 
-      - name: 🛡️ Run Checker (Sing-box + Forge)
+      - name: Run-Checker
         run: |
           chmod +x sing-box
           python checker.py
 
-      - name: 📤 Push to GitHub
+      - name: Push-GitHub
         run: |
           git config --global user.name "Catsss3-Bot"
           git config --global user.email "vehesslav@gmail.com"
           git add distributor.txt
-          git commit -m "🎯 Stella: Daily Sync & Forge ✨" || exit 0
+          git commit -m "Sync update" || exit 0
           git push origin main
 
-      - name: ☁️ Push to Mail.ru Cloud
+      - name: Push-MailRu
         run: |
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
