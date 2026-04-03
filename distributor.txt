@@ -1,8 +1,12 @@
-vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=%2F&security=none&encryption=none&type=ws#🌐سرور 479 | Far-13| MTSRVRS
-vless://b738db04-c73c-4551-b6f2-9041e93914d4@18.130.13.55:4040?type=http&encryption=none&host=soft98.ir&method=GET&sni=ok.ru#ok.ru-0046 | 🇬🇧 United Kingdom | VLESS | 📺 YT | TG: @YoutubeUnBlockRu
-vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202/?type=ws&encryption=none&path=%2F&sni=ok.ru#ok.ru-hamedvpns-117-%F0%9F%87%BB%F0%9F%87%B3
-vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202/?type=ws&encryption=none&path=%2F#hamedvpns-117-%F0%9F%87%BB%F0%9F%87%B3
 vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855/?type=ws&encryption=none&path=%2F&sni=vk.com#vk.com-%F0%9F%87%A9%F0%9F%87%B0Denmark%2B-%3E%2B%F0%9F%87%A9%F0%9F%87%B0Denmark%2B%E2%9A%A1%40DeamNet_Proxy
-vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=%2F&security=none&encryption=none&type=ws&sni=ok.ru#ok.ru-🌐سرور 479 | Far-13| MTSRVRS
+vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202/?type=ws&encryption=none&path=%2F&sni=mail.ru#mail.ru-hamedvpns-117-%F0%9F%87%BB%F0%9F%87%B3
+vless://1e97f262-296c-45cf-afc0-6ed86f768013@57.129.119.115:443?encryption=none&security=none&type=ws&sni=ok.ru#ok.ru-🇩🇪 DE | 57.129.119.115
+vless://1e97f262-296c-45cf-afc0-6ed86f768013@57.129.119.115:443?encryption=none&security=none&type=ws#🇩🇪 DE | 57.129.119.115
+vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=%2F&security=none&encryption=none&type=ws#🌐سرور 268 | Far-13| MTSRVRS
+vless://1e97f262-296c-45cf-afc0-6ed86f768013@57.129.119.115:443?encryption=none&security=none&type=ws&sni=mail.ru#mail.ru-🌐سرور 622 | Far-13| MTSRVRS
 vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855/?type=ws&encryption=none&path=%2F#%F0%9F%87%A9%F0%9F%87%B0Denmark%2B-%3E%2B%F0%9F%87%A9%F0%9F%87%B0Denmark%2B%E2%9A%A1%40DeamNet_Proxy
-vless://b738db04-c73c-4551-b6f2-9041e93914d4@18.130.13.55:4040?type=http&encryption=none&host=soft98.ir&method=GET#0046 | 🇬🇧 United Kingdom | VLESS | 📺 YT | TG: @YoutubeUnBlockRu
+vless://1e97f262-296c-45cf-afc0-6ed86f768013@57.129.119.115:443?encryption=none&security=none&type=ws&sni=yandex.ru#yandex.ru-🏴‍☠️ UN | VLESS
+vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202/?type=ws&encryption=none&path=%2F#hamedvpns-117-%F0%9F%87%BB%F0%9F%87%B3
+vless://1e97f262-296c-45cf-afc0-6ed86f768013@57.129.119.115:443?encryption=none&security=none&type=ws#🌐سرور 622 | Far-13| MTSRVRS
+vless://1e97f262-296c-45cf-afc0-6ed86f768013@57.129.119.115:443?encryption=none&security=none&type=ws#🏴‍☠️ UN | VLESS
+vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=%2F&security=none&encryption=none&type=ws&sni=dzen.ru#dzen.ru-🌐سرور 268 | Far-13| MTSRVRS
