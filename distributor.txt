@@ -1,20 +1,16 @@
-vless://8b9e2e10-a566-40c0-abae-d365a3925170@bpbtest.neroce7654.workers.dev:80?type=ws&security=none&host=BpBTest.NeROCe7654.wOrKERS.dEv#2262 | 🌐 Unknown | VLESS | TG: @YoutubeUnBlockRu
-vless://5aa7d17e-7dc2-46dd-9acf-c3c97440259b@sss.yaml7.ggff.net:80?encryption=none&security=none&type=ws&host=sss.yaml7.ggff.net&path=%2F%3Fed%3D2048#APPXA
-vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202?encryption=none&path=%2F&security=none&type=ws#APPXA
-vless://8b9e2e10-a566-40c0-abae-d365a3925170@bpbtest.neroce7654.workers.dev:80?type=ws&security=none&host=BpBTest.NeROCe7654.wOrKERS.dEv&sni=mail.ru#mail.ru-2262 | 🌐 Unknown | VLESS | TG: @YoutubeUnBlockRu
-vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=%2F&security=none&encryption=none&type=ws#🌐سرور 268 | Far-13| MTSRVRS
-vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202?encryption=none&path=%2F&security=none&type=ws&sni=yandex.ru#yandex.ru-APPXA
-vless://14e1775b-d92c-455b-8db3-e6c6d61909e0@vpnpro.eshghiabolfazl2009.workers.dev:80?encryption=none&host=vpnpro.eshghiabolfazl2009.workers.dev&path=%F0%9F%94%92&security=none&type=ws&sni=yandex.ru#yandex.ru-APPXA
-vless://388a6c57-87e7-420b-afe2-b3eb670fd7da@vip.yaml7.ggff.net:80?type=ws&security=none&host=vip.yaml7.ggff.net#0110 | 🌐 Unknown | VLESS | TG: @YoutubeUnBlockRu
-vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855/?type=ws&encryption=none&path=%2F&sni=vk.com#vk.com-%F0%9F%87%A9%F0%9F%87%B0Denmark%2B-%3E%2B%F0%9F%87%A9%F0%9F%87%B0Denmark%2B%E2%9A%A1%40DeamNet_Proxy
-vless://14e1775b-d92c-455b-8db3-e6c6d61909e0@vpnpro.eshghiabolfazl2009.workers.dev:80?encryption=none&host=vpnpro.eshghiabolfazl2009.workers.dev&path=%F0%9F%94%92&security=none&type=ws#APPXA
-vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855/?type=ws&encryption=none&path=%2F#%F0%9F%87%A9%F0%9F%87%B0Denmark%2B-%3E%2B%F0%9F%87%A9%F0%9F%87%B0Denmark%2B%E2%9A%A1%40DeamNet_Proxy
+vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=/&security=none&encryption=none&host=Join---V2rayBaaz---Join---V2rayBaaz---Join---V2rayBaaz&type=ws&sni=mail.ru#mail.ru-APPXA
 vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?type=ws&security=none&path=/#APPXA
-vless://5aa7d17e-7dc2-46dd-9acf-c3c97440259b@sss.yaml7.ggff.net:80?encryption=none&security=none&type=ws&host=sss.yaml7.ggff.net&path=%2F%3Fed%3D2048&sni=vk.com#vk.com-APPXA
-vless://388a6c57-87e7-420b-afe2-b3eb670fd7da@vip.yaml7.ggff.net:80?type=ws&security=none&host=vip.yaml7.ggff.net&sni=ok.ru#ok.ru-0110 | 🌐 Unknown | VLESS | TG: @YoutubeUnBlockRu
-vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=%2F&security=none&encryption=none&type=ws&sni=mail.ru#mail.ru-🌐سرور 268 | Far-13| MTSRVRS
-vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=/&security=none&encryption=none&host=Join---V2rayBaaz---Join---V2rayBaaz---Join---V2rayBaaz&type=ws&sni=dzen.ru#dzen.ru-APPXA
-vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=/&security=none&encryption=none&host=Join---V2rayBaaz---Join---V2rayBaaz---Join---V2rayBaaz&type=ws#APPXA
+vless://5aa7d17e-7dc2-46dd-9acf-c3c97440259b@sss.yaml7.ggff.net:80?encryption=none&security=none&type=ws&host=sss.yaml7.ggff.net&path=%2F%3Fed%3D2048&sni=mail.ru#mail.ru-APPXA
 vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?type=ws&security=none&path=/&sni=mail.ru#mail.ru-APPXA
+vless://14e1775b-d92c-455b-8db3-e6c6d61909e0@vpnpro.eshghiabolfazl2009.workers.dev:80?encryption=none&host=vpnpro.eshghiabolfazl2009.workers.dev&path=%F0%9F%94%92&security=none&type=ws&sni=dzen.ru#dzen.ru-APPXA
+vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=%2F&security=none&encryption=none&type=ws#🌐سرور 268 | Far-13| MTSRVRS
+vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202?encryption=none&path=%2F&security=none&type=ws#APPXA
+vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=/&security=none&encryption=none&host=Join---V2rayBaaz---Join---V2rayBaaz---Join---V2rayBaaz&type=ws#APPXA
+vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855?path=%2F&security=none&encryption=none&type=ws&sni=ok.ru#ok.ru-🌐سرور 268 | Far-13| MTSRVRS
+vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202/?type=ws&encryption=none&path=%2F&sni=mail.ru#mail.ru-hamedvpns-117-%F0%9F%87%BB%F0%9F%87%B3
+vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855/?type=ws&encryption=none&path=%2F#%F0%9F%87%A9%F0%9F%87%B0Denmark%2B-%3E%2B%F0%9F%87%A9%F0%9F%87%B0Denmark%2B%E2%9A%A1%40DeamNet_Proxy
+vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202?encryption=none&path=%2F&security=none&type=ws&sni=dzen.ru#dzen.ru-APPXA
+vless://5aa7d17e-7dc2-46dd-9acf-c3c97440259b@sss.yaml7.ggff.net:80?encryption=none&security=none&type=ws&host=sss.yaml7.ggff.net&path=%2F%3Fed%3D2048#APPXA
 vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202/?type=ws&encryption=none&path=%2F#hamedvpns-117-%F0%9F%87%BB%F0%9F%87%B3
-vless://cca053d5-7123-4a87-83d6-babe4e9c8115@103.245.237.124:58202/?type=ws&encryption=none&path=%2F&sni=dzen.ru#dzen.ru-hamedvpns-117-%F0%9F%87%BB%F0%9F%87%B3
+vless://14e1775b-d92c-455b-8db3-e6c6d61909e0@vpnpro.eshghiabolfazl2009.workers.dev:80?encryption=none&host=vpnpro.eshghiabolfazl2009.workers.dev&path=%F0%9F%94%92&security=none&type=ws#APPXA
+vless://e4fc4761-154f-490e-bbaa-b4fa193f1073@45.148.31.0:15855/?type=ws&encryption=none&path=%2F&sni=vk.com#vk.com-%F0%9F%87%A9%F0%9F%87%B0Denmark%2B-%3E%2B%F0%9F%87%A9%F0%9F%87%B0Denmark%2B%E2%9A%A1%40DeamNet_Proxy
