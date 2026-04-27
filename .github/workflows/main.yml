@@ -2,16 +2,16 @@ name: Stella-Sync
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # 03:00 UTC (6 утра МСК)
+    - cron: '0 3 * * *'
   workflow_dispatch: {}
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      CHECK_TIMEOUT: 15
-      CHECK_THREADS: 50
-      CHECK_URL: "https://www.google.com/generate_204"
+      CHECK_TIMEOUT: 10
+      CHECK_THREADS: 100
+      CHECK_URL: "http://cp.cloudflare.com/generate_204"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -25,9 +25,8 @@ jobs:
       - run: |
           git config --global user.name "Catsss3-Bot"
           git config --global user.email "vehesslav@gmail.com"
-          git add .github/workflows/main.yml
           git add distributor.txt
-          git commit -m "⏰ Daily schedule restored (03:00 UTC)" || exit 0
+          git commit -m "🚀 Stella-Update: switched to Cloudflare check via Colab" || exit 0
           git push origin main
       - run: |
           curl -T distributor.txt --user "${{ secrets.MAIL_RU_LOGIN }}:${{ secrets.MAIL_RU_PASS }}" "https://webdav.cloud.mail.ru/distributor.txt"
