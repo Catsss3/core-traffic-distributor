@@ -1,54 +1,51 @@
-import requests
-import socket
-import urllib.parse
-import concurrent.futures
+import requests, re, os
 
-sources = {
-    'my-main-hy2-3k': 'https://raw.githubusercontent.com/Catsss3/web-assets-static/main/providers/hy2_list.txt',
-    'assets-distributor': 'https://raw.githubusercontent.com/Catsss3/assets-distributor/main/distributor.txt',
-    'sys-cache-storage': 'https://raw.githubusercontent.com/Catsss3/sys-cache-storage/main/live_configs.txt',
-    'web-resource-assets': 'https://raw.githubusercontent.com/Catsss3/web-resource-assets/main/core-parser-ts/category/protocols/vless.txt',
-    'yitong2333': 'https://raw.githubusercontent.com/yitong2333/proxy-minging/main/v2ray.txt',
-    'vless-collector': 'https://raw.githubusercontent.com/mohamadfg-dev/telegram-v2ray-configs-collector/main/category/vless.txt',
-    'mheidari98': 'https://raw.githubusercontent.com/mheidari98/.proxy/main/vless',
-    'v2ray-worker': 'https://raw.githubusercontent.com/miladtahanian/V2RayCFGDumper/main/sub.txt',
-    'xs-vless': 'https://raw.githubusercontent.com/LalatinaHub/Mineral/master/result/nodes'
+# ОБЪЕДИНЕННЫЙ СПИСОК: Твои оригинальные + Новые мощные источники
+SOURCES = {
+    # Твои оригинальные репозитории (Catsss3 и др.)
+    "cat-hy2": "https://raw.githubusercontent.com/Catsss3/web-assets-static/main/providers/hy2_list.txt",
+    "cat-distributor": "https://raw.githubusercontent.com/Catsss3/assets-distributor/main/distributor.txt",
+    "cat-cache": "https://raw.githubusercontent.com/Catsss3/sys-cache-storage/main/live_configs.txt",
+    "cat-vless": "https://raw.githubusercontent.com/Catsss3/web-resource-assets/main/core-parser-ts/category/protocols/vless.txt",
+    "yitong-mining": "https://raw.githubusercontent.com/yitong2333/proxy-minging/main/v2ray.txt",
+    "tg-collector": "https://raw.githubusercontent.com/mohamadfg-dev/telegram-v2ray-configs-collector/main/category/vless.txt",
+    "mheidari-proxy": "https://raw.githubusercontent.com/mheidari98/.proxy/main/vless",
+    "v2ray-dumper": "https://raw.githubusercontent.com/miladtahanian/V2RayCFGDumper/main/sub.txt",
+    "lalatina-nodes": "https://raw.githubusercontent.com/LalatinaHub/Mineral/master/result/nodes",
+    
+    # Новые источники + замена (Mheidari-collector, vfarid и др.)
+    "mheidari-coll-vless": "https://raw.githubusercontent.com/Mheidari98/vless-collector/main/sub/vless",
+    "mheidari-coll-trojan": "https://raw.githubusercontent.com/Mheidari98/vless-collector/main/sub/trojan",
+    "coldwater-vless": "https://raw.githubusercontent.com/coldwater-10/m-vless/main/vless",
+    "yebekhe-tvc": "https://raw.githubusercontent.com/yebekhe/TVC/main/api/full/vless",
+    "vfarid-all": "https://raw.githubusercontent.com/vfarid/v2ray-share/main/all.txt",
+    "xs-vless-new": "https://raw.githubusercontent.com/XS-Official/v2ray-collector/main/vless.txt",
+    "yitong-rules": "https://raw.githubusercontent.com/yitong2333/v2ray-rules-dat/master/vless.txt",
+    "sadegh-vless": "https://raw.githubusercontent.com/SadeghHoseini/v2ray-configs/master/Vless_Sub.txt"
 }
 
-def check_tcp(proxy_link):
-    try:
-        link = proxy_link.strip()
-        allowed = ('vless://', 'hysteria2://', 'hy2://', 'tuic://', 'vmess://', 'trojan://', 'ss://')
-        if not link or not link.lower().startswith(allowed): return None
-        base_part = link.split('#')[0]
-        parsed = urllib.parse.urlparse(base_part)
-        netloc = parsed.netloc
-        address = netloc.split('@')[1] if '@' in netloc else netloc
-        if ':' not in address: return None
-        host, port = address.split(':')
-        with socket.create_connection((host, int(port)), timeout=3):
-            return link
-    except: return None
-
-def main():
-    total_list = []
-    print(f"--- 🕵️‍♀️ Стелла собирает базу из {len(sources)} источников ---")
-    for name, url in sources.items():
+def fetch():
+    all_proxies = []
+    print("--- 🚀 СТЕЛЛА: Запуск МЕГА-сбора (16 источников) ---")
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    for name, url in SOURCES.items():
         try:
-            res = requests.get(url, timeout=15)
+            res = requests.get(url, headers=headers, timeout=15)
             if res.status_code == 200:
-                lines = [l.strip() for l in res.text.splitlines() if '://' in l]
-                total_list.extend(lines)
-                print(f"✅ {name}: получено {len(lines)} строк")
-        except: continue
-    unique_links = list(set(total_list))
-    print(f"📡 Всего уникальных для TCP-теста: {len(unique_links)}")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
-        results = list(executor.map(check_tcp, unique_links))
-        valid_links = [r for r in results if r is not None]
-    print(f"🔥 Прошли TCP-фильтр: {len(valid_links)}")
-    with open('distributor.txt', 'w', encoding='utf-8') as f:
-        f.write('\n'.join(valid_links))
-    print("💾 Файл distributor.txt обновлен!")
+                # Ищем vless и trojan (и hy2 если есть в твоих списках)
+                found = re.findall(r'(vless|trojan|hy2)://[^\s]+', res.text)
+                proxies = [f"{p[0]}://{p[1]}" if isinstance(p, tuple) else p for p in found]
+                print(f"✅ {name}: получено {len(proxies)} строк")
+                all_proxies.extend(proxies)
+            else:
+                print(f"❌ {name}: ошибка {res.status_code}")
+        except:
+            print(f"⚠️ {name}: таймаут/ошибка")
+    
+    unique = list(set(all_proxies))
+    with open("distributor.txt", "w") as f:
+        f.write('\n'.join(unique))
+    print(f"📡 Сбор окончен. Всего уникальных: {len(unique)}")
 
-if __name__ == '__main__': main()
+if __name__ == "__main__":
+    fetch()
