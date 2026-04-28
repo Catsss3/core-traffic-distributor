@@ -5,7 +5,6 @@ import requests
 import time
 from google.colab import userdata
 
-# --- КОНФИГУРАЦИЯ ---
 GITHUB_USER = "Catsss3"
 GITHUB_REPO = "core-traffic-distributor"
 PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "hy2://", "tuic://", "hysteria2://", "warp://", "wireguard://"]
@@ -44,29 +43,26 @@ def get_goida_files(token):
 def main():
     token = userdata.get('WORKFLOW_TOKEN')
     all_data = []
-    print("📡 Сбор данных...")
+    print("📡 Синхронизация...")
     for name, url in SOURCES.items():
         res = fetch(url)
-        if res: 
-            all_data.append(res)
-            print(f"✅ {name}")
+        if res: all_data.append(res)
     
     g_urls = get_goida_files(token)
-    print(f"💎 Goida Mirror: {len(g_urls)} файлов")
     for url in g_urls:
         all_data.append(fetch(url))
-        time.sleep(0.2)
+        time.sleep(0.1)
 
+    # Исправленная регулярка без SyntaxWarning
     regex = r"(" + "|".join(map(re.escape, PROTOCOLS)) + r")[^\s\"']+"
     unique = set()
     for block in all_data:
         for match in re.finditer(regex, block, flags=re.IGNORECASE):
             unique.add(match.group(0).strip())
 
-    # Сохраняем результат в файл для базы
     with open("raw_configs.txt", "w", encoding="utf-8") as f:
         for l in unique: f.write(l + "\n")
-    print(f"🏁 Готово: {len(unique)} уникальных конфигов сохранено.")
+    print(f"🏁 Успех: {len(unique)} конфигов.")
 
 if __name__ == '__main__':
     main()
