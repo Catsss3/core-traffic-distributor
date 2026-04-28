@@ -12,25 +12,25 @@ import (
  "strings"
  "sync"
  "time"
+    "encoding/json" // Стандартный JSON для RawMessage
 
- "github.com/SagerNet/sing-box/common/json"
- "github.com/SagerNet/sing-box/constant"
- "github.com/SagerNet/sing-box/driver"
- "github.com/SagerNet/sing-box/outbound"
- "github.com/SagerNet/sing-box/proxy"
+ "github.com/sagernet/sing-box/adapter"
+ "github.com/sagernet/sing-box/common"
+ "github.com/sagernet/sing-box/constant"
+ "github.com/sagernet/sing-box/outbound"
+ "github.com/sagernet/sing-box/proxy"
 )
 
 const (
- TCPTimeout         = 1200 * time.Millisecond
- HTTPTimeout        = 2500 * time.Millisecond
+ MaxTimeout         = 1800 * time.Millisecond
  MaxGoroutines      = 150
- InputFile          = "../raw_configs.txt" # Поднимаемся на уровень выше к конфигам
- OutputFile         = "../distributor.txt" # Пишем результат тоже в корень
+ InputFile          = "../raw_configs.txt"
+ OutputFile         = "../distributor.txt"
  CloudflareCheckURL = "http://cp.cloudflare.com/"
 )
 
 func main() {
- fmt.Printf("🚀 Stella Turbo-Engine | Workers: %d\n", MaxGoroutines)
+ fmt.Printf("🛡️ Stella + Sing-Box Engine (v1.13+) | Workers %d\n", MaxGoroutines)
 
  f, err := os.Open(InputFile)
  if err != nil {
@@ -58,10 +58,7 @@ func main() {
  go func() {
   sc := bufio.NewScanner(f)
   for sc.Scan() {
-   line := strings.TrimSpace(sc.Text())
-   if line != "" {
-    links <- line
-   }
+   links <- sc.Text()
   }
   close(links)
  }()
@@ -80,40 +77,42 @@ func main() {
   w.WriteString(r + "\n")
   cnt++
   if cnt%100 == 0 {
-   fmt.Printf("\r🔍 Проверено... Найдено живых: %d", cnt)
+   fmt.Printf("\r🔍 Проверено... Живых: %d", cnt)
   }
  }
  w.Flush()
- fmt.Printf("\n✅ Готово! Результат в distributor.txt\n")
+ fmt.Printf("\n🏁 Готово! Результат записан в %s\n", OutputFile)
 }
 
 func httpCheckSingBox(raw string) bool {
- u, err := url.Parse(raw)
- if err != nil || u.Host == "" { return false }
- if !tcpAlive(u.Host) { return false }
+ raw = strings.TrimSpace(raw)
+ if raw == "" || !strings.Contains(raw, "://") { return false }
 
- ob, err := proxy.ParseURL(u)
+ ob, err := parseProxyURL(raw)
  if err != nil { return false }
 
  opt, err := outbound.NewOption(ob)
  if err != nil { return false }
- outJSON, _ := json.Marshal(opt)
+    
+ outJSON, err := common.Marshal(opt)
+ if err != nil { return false }
 
  conf := map[string]any{
   "log": map[string]any{"level": "error"},
   "outbounds": []json.RawMessage{outJSON},
  }
- confBytes, _ := json.Marshal(conf)
+ confBytes, _ := common.Marshal(conf)
 
- ctx, cancel := context.WithTimeout(context.Background(), HTTPTimeout*2)
+ ctx, cancel := context.WithTimeout(context.Background(), MaxTimeout*2)
  defer cancel()
 
- d, err := driver.New(ctx, confBytes, driver.Options{LogLevel: constant.LogLevelError})
+ d, err := adapter.New(ctx, confBytes, adapter.Options{
+  LogLevel: constant.LogLevelError,
+ })
  if err != nil { return false }
- go d.Start()
- defer d.Close()
+ go func() { _ = d.Start() }()
 
- time.Sleep(120 * time.Millisecond)
+ time.Sleep(150 * time.Millisecond)
 
  client := &http.Client{
   Transport: &http.Transport{
@@ -121,21 +120,23 @@ func httpCheckSingBox(raw string) bool {
     return d.DialContext(c, n, a)
    },
   },
-  Timeout: HTTPTimeout,
+  Timeout: MaxTimeout,
  }
 
  req, _ := http.NewRequestWithContext(ctx, "GET", CloudflareCheckURL, nil)
  resp, err := client.Do(req)
- if err != nil { return false }
+ if err != nil {
+  _ = d.Close()
+  return false
+ }
  defer resp.Body.Close()
+ _ = d.Close()
 
  return resp.StatusCode == http.StatusOK
 }
 
-func tcpAlive(hostPort string) bool {
- if !strings.Contains(hostPort, ":") { hostPort += ":443" }
- conn, err := net.DialTimeout("tcp", hostPort, TCPTimeout)
- if err != nil { return false }
- conn.Close()
- return true
+func parseProxyURL(raw string) (proxy.Outbound, error) {
+ u, err := url.Parse(raw)
+ if err != nil { return nil, err }
+ return proxy.ParseURL(u)
 }
