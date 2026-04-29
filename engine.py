@@ -3,7 +3,7 @@ import re
 import base64
 import requests
 import time
-from google.colab import userdata
+# from google.colab import userdata
 
 GITHUB_USER = "Catsss3"
 GITHUB_REPO = "core-traffic-distributor"
