@@ -19,7 +19,7 @@ jobs:
         with: { go-version: '1.21' }
 
       - name: Install Dependencies
-        run: pip install aiohttp tqdm requests colorama rich psutil
+        run: pip install aiohttp tqdm requests colorama rich psutil pysocks
 
       - name: Step 1 - Search Engine
         run: python engine.py
