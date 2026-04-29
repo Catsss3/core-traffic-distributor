@@ -19,7 +19,7 @@ jobs:
         with: { go-version: '1.21' }
 
       - name: Install Dependencies
-        run: pip install aiohttp tqdm requests colorama rich
+        run: pip install aiohttp tqdm requests colorama rich psutil
 
       # ЭТАП 1: Поиск (raw_configs.txt)
       - name: Step 1 - Search Engine
