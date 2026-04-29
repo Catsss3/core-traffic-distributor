@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -12,14 +13,18 @@ import (
 )
 
 func main() {
- fmt.Println("🚀 Stella TCP ULTRA-SCAN | Full Power Mode (53k+)")
+ fmt.Println("🚀 Stella Ultra-Link-Preserver v3.0 | Full Link Check Mode")
 
- const inFile = "raw_configs.txt"
- const outFile = "alive_tcp_full.txt"
+ const (
+  inFile  = "raw_configs.txt"      
+  outFile = "alive_tcp_full.txt"   
+  workers = 300                   
+  timeout = 2 * time.Second       
+ )
 
  f, err := os.Open(inFile)
  if err != nil {
-  fmt.Printf("❌ Ошибка: Файл %s не найден\n", inFile)
+  fmt.Printf("❌ Ошибка: Файл %s не найден!\n", inFile)
   return
  }
  defer f.Close()
@@ -27,52 +32,66 @@ func main() {
  out, _ := os.Create(outFile)
  defer out.Close()
 
- tasks := make(chan string, 1000)
+ type task struct {
+  fullLine string
+  address  string
+ }
+
+ tasks := make(chan task, 1000)
  results := make(chan string, 1000)
  var wg sync.WaitGroup
 
- // Агрессивный режим: 300 потоков
- for i := 0; i < 300; i++ {
+ for i := 0; i < workers; i++ {
   wg.Add(1)
   go func() {
    defer wg.Done()
-   for addr := range tasks {
-    conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
+   for t := range tasks {
+    conn, err := net.DialTimeout("tcp", t.address, timeout)
     if err == nil {
      conn.Close()
-     results <- addr
+     results <- t.fullLine 
     }
    }
   }()
  }
 
- // Отдельная горутина для записи, чтобы не тормозить проверку
  doneWriting := make(chan bool)
  go func() {
   writer := bufio.NewWriter(out)
+  count := 0
   for res := range results {
    writer.WriteString(res + "\n")
+   count++
+   if count%100 == 0 {
+    fmt.Printf("\r✅ Сохранено живых конфигов: %d", count)
+    writer.Flush()
+   }
   }
   writer.Flush()
   doneWriting <- true
  }()
 
  scanner := bufio.NewScanner(f)
- count := 0
  for scanner.Scan() {
   line := strings.TrimSpace(scanner.Text())
-  if !strings.Contains(line, "://") { continue }
+  if line == "" || !strings.Contains(line, "://") {
+   continue
+  }
 
-  u, _ := url.Parse(line)
-  if u == nil { continue }
+  u, err := url.Parse(line)
+  if err != nil {
+   continue
+  }
 
   host := u.Hostname()
   port := u.Port()
-  if port == "" { port = "443" }
+  if port == "" {
+   if u.Scheme == "vless" || u.Scheme == "trojan" { port = "443" } else { port = "80" }
+  }
 
-  if host != "" {
-   tasks <- net.JoinHostPort(host, port)
-   count++
+  tasks <- task{
+   fullLine: line,
+   address:  net.JoinHostPort(host, port),
   }
  }
 
@@ -81,5 +100,5 @@ func main() {
  close(results)
  <-doneWriting
 
- fmt.Printf("\n🏁 МЕГА-СКАН ЗАВЕРШЕН. Проверено: %d. Результаты в %s\n", count, outFile)
+ fmt.Printf("\n\n🏁 ГОТОВО! Теперь ссылки сохраняются целиком.\n")
 }
