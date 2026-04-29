@@ -41,7 +41,7 @@ def get_goida_files(token):
     return files
 
 def main():
-    token = userdata.get('WORKFLOW_TOKEN')
+    token = None
     all_data = []
     print("📡 Синхронизация...")
     for name, url in SOURCES.items():
