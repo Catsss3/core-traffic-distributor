@@ -36,15 +36,21 @@ jobs:
           wget https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
           unzip -o Xray-linux-64.zip xray && chmod +x xray
           git clone https://github.com/limingda1212/XrayChecker.git
-          # ВОТ ТУТ КЛАДЕМ ВНУТРЬ И ДАЕМ ПРАВА
           cp xray XrayChecker/xray
           chmod +x XrayChecker/xray
+          
+          # СТЕЛЛА: Склеиваем выживших TCP и неприкосновенный UDP-сейф
+          if [ -f raw_udp.txt ]; then
+            cat raw_udp.txt >> tcp_checker/alive_tcp_full.txt
+            echo "Стелла: UDP-конфиги успешно подмешаны в общую очередь!"
+          fi
+
           python proxy_manager.py
 
       - name: Step 4 - Push Results
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "Stella-Global-Bot"
-          git add raw_configs.txt tcp_checker/alive_tcp_full.txt distributor.txt
-          git commit -m "Full Sync: Search -> TCP -> Xray | $(date)" || exit 0
+          git add raw_configs.txt raw_udp.txt tcp_checker/alive_tcp_full.txt distributor.txt
+          git commit -m "Full Sync: Search -> TCP (Added UDP) -> Xray | $(date)" || exit 0
           git push
