@@ -1,4 +1,3 @@
-
 import os
 import re
 import asyncio
@@ -11,8 +10,12 @@ try:
 except (ImportError, ModuleNotFoundError):
     TOKEN = os.environ.get('WORKFLOW_TOKEN')
 
-UDP_PROTOCOLS = ["hy2://", "tuic://", "hysteria2://"]
-TCP_PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "warp://", "wireguard://"]
+# Протоколы, которые пойдут В ОБХОД жесткого TCP-чекера (в файл raw_udp.txt)
+UDP_PROTOCOLS = ["hy2://", "tuic://", "hysteria2://", "wireguard://", "warp://"]
+
+# Протоколы для стандартной проверки порта (в файл raw_configs.txt)
+TCP_PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://"]
+
 ALL_PROTOCOLS = TCP_PROTOCOLS + UDP_PROTOCOLS
 
 SOURCES = {
@@ -45,7 +48,7 @@ async def get_goida_files(session, token):
     return []
 
 async def main():
-    print("📡 Stella Engine v2.1: Сбор запущен...")
+    print("📡 Stella Engine v2.2: Раздельный сбор (TCP / UDP-Safe)...")
     async with aiohttp.ClientSession(headers={'User-Agent': 'Mozilla/5.0'}) as session:
         tasks = [fetch(session, url) for url in SOURCES.values()]
         g_urls = await get_goida_files(session, TOKEN)
@@ -53,26 +56,34 @@ async def main():
         all_results = await asyncio.gather(*tasks)
     
     tcp_unique, udp_unique = set(), set()
+    
+    # Регулярка для поиска всех ссылок
     regex = r"(" + "|".join(map(re.escape, ALL_PROTOCOLS)) + r")[^\\s\"'<>]+"
+    
     for block in all_results:
         for match in re.finditer(regex, block, flags=re.IGNORECASE):
             link = match.group(0).strip()
-            if any(link.startswith(p) for p in UDP_PROTOCOLS): udp_unique.add(link)
-            else: tcp_unique.add(link)
+            # Если протокол в списке UDP-Safe — кладем в отдельную кучу
+            if any(link.lower().startswith(p) for p in UDP_PROTOCOLS):
+                udp_unique.add(link)
+            else:
+                tcp_unique.add(link)
     
+    # 1. Записываем TCP (их будет мучить Go-чекер)
     with open("raw_configs.txt", "w", encoding="utf-8") as f:
         for l in sorted(tcp_unique): f.write(l + "\n")
+        
+    # 2. Записываем UDP-Safe (они пойдут сразу в XrayChecker)
     with open("raw_udp.txt", "w", encoding="utf-8") as f:
         for l in sorted(udp_unique): f.write(l + "\n")
-    print(f"🏁 Собрано: TCP {len(tcp_unique)}, UDP {len(udp_unique)}")
+        
+    print(f"🏁 Финиш! TCP: {len(tcp_unique)} | UDP-Safe: {len(udp_unique)}")
 
 if __name__ == '__main__':
     import asyncio
     try:
         asyncio.run(main())
     except RuntimeError:
-        # Для работы внутри Jupyter/Colab
         import nest_asyncio
         nest_asyncio.apply()
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(main())
+        asyncio.run(main())
