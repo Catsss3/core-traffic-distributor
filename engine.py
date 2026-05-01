@@ -3,7 +3,13 @@ import os
 import re
 import asyncio
 import aiohttp
-from google.colab import userdata
+
+# Умный импорт токена: для Колаба и для Гитхаба
+try:
+    from google.colab import userdata
+    TOKEN = userdata.get('WORKFLOW_TOKEN')
+except (ImportError, ModuleNotFoundError):
+    TOKEN = os.environ.get('WORKFLOW_TOKEN')
 
 UDP_PROTOCOLS = ["hy2://", "tuic://", "hysteria2://"]
 TCP_PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "warp://", "wireguard://"]
@@ -39,12 +45,10 @@ async def get_goida_files(session, token):
     return []
 
 async def main():
-    try: token = userdata.get('WORKFLOW_TOKEN')
-    except: token = None
-    print("📡 Stella Engine v2.0: Сбор данных...")
+    print("📡 Stella Engine v2.1: Сбор запущен...")
     async with aiohttp.ClientSession(headers={'User-Agent': 'Mozilla/5.0'}) as session:
         tasks = [fetch(session, url) for url in SOURCES.values()]
-        g_urls = await get_goida_files(session, token)
+        g_urls = await get_goida_files(session, TOKEN)
         tasks.extend([fetch(session, url) for url in g_urls])
         all_results = await asyncio.gather(*tasks)
     
@@ -64,10 +68,11 @@ async def main():
 
 if __name__ == '__main__':
     import asyncio
-    loop = asyncio.get_event_loop()
-    if loop.is_running():
+    try:
+        asyncio.run(main())
+    except RuntimeError:
+        # Для работы внутри Jupyter/Colab
         import nest_asyncio
         nest_asyncio.apply()
-        asyncio.gather(main())
-    else:
-        asyncio.run(main())
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main())
