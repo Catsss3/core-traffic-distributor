@@ -47,7 +47,6 @@ hy2://v2meowmeowmeow@103.68.108.25:443/?in
 hy2://w
 hy2://y0qochA
 hy2://zhangyang@130.61.50.75:6443/
-vle
 hysteria2://%40JavidnamanIran-Javid-
 hysteria2://%40KevinZakarian@194.117.224.146:22002?in
 hysteria2://%40KevinZakarian@kevin.vpny.online:22002/?in
@@ -2730,3 +2729,4 @@ tuic://f2843ad2-c87f-4dda-9de1-472381078375:f2843ad2-c87f-4dda-9de1-472381078375
 tuic://f6893810-5165-4d9a-95fb-a582fd82d004:f6893810-5165-4d9a-95fb-a582fd82d004@bivojoud.
 tuic://f8cf4fff-0a53-4ce1-9a23-4bd97171c8ff:f8cf4fff-0a53-4ce1-9a23-4bd97171c8ff@cat.beranti.com:8883?conge
 tuic://m3n4o5p6-7890-4abc-1def-23456789abcd@185.146.173.150:8888?conge
+wireguard://GGdi0j%2B
