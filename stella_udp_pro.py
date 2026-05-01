@@ -1,80 +1,50 @@
-import argparse
-import asyncio
-import json
-import os
-import sys
-import tempfile
+import argparse, asyncio, json, os, sys, tempfile
 from pathlib import Path
-
-TEST_URL = "https://1.1.1.1/cdn-cgi/trace"
-TIMEOUT = 20
-WORKERS = 15 # Чуть ускоримся
-
-def build_xray_config(link, socks_port):
-    protocol = "hysteria2" if link.startswith("hy2://") else "tuic"
-    return {
-        "log": {"loglevel": "none"},
-        "inbounds": [{
-            "port": socks_port,
-            "listen": "127.0.0.1",
-            "protocol": "socks",
-            "settings": {"udp": True}
-        }],
-        "outbounds": [{
-            "protocol": protocol,
-            "tag": "proxy",
-            "streamSettings": {"network": "udp"},
-            "overrideDestination": link
-        }]
-    }
 
 async def check_one(link, xray_path, socks_port):
     cfg_path = None
     proc = None
     try:
-        cfg = build_xray_config(link, socks_port)
+        protocol = "hysteria2" if link.startswith("hy2://") else "tuic"
+        cfg = {
+            "log": {"loglevel": "none"},
+            "inbounds": [{"port": socks_port, "listen": "127.0.0.1", "protocol": "socks", "settings": {"udp": True}}],
+            "outbounds": [{"protocol": protocol, "tag": "proxy", "streamSettings": {"network": "udp"}, "overrideDestination": link}]
+        }
         fd, p = tempfile.mkstemp(suffix=".json")
         os.close(fd)
         cfg_path = Path(p)
         cfg_path.write_text(json.dumps(cfg))
 
-        # Явный запуск
         proc = await asyncio.create_subprocess_exec(
-            str(xray_path), "-c", str(cfg_path),
+            str(xray_path), "-c", str(cfg_path), 
             stdout=asyncio.subprocess.DEVNULL, 
             stderr=asyncio.subprocess.DEVNULL
         )
-        
-        await asyncio.sleep(2)
+        await asyncio.sleep(2) # Время на установку QUIC-сессии
 
-        # Проверка через curl с явным игнором ошибок сертификатов (для Hy2 важно)
+        # Проверка через curl: -k (ignore certs), -L (follow redirects), -s (silent)
         curl = await asyncio.create_subprocess_exec(
-            "curl", "-s", "-k", "-o", "/dev/null", "--max-time", str(TIMEOUT),
-            "--proxy", f"socks5h://127.0.0.1:{socks_port}", TEST_URL
+            "curl", "-s", "-k", "-L", "-o", "/dev/null", "--max-time", "15", 
+            "--proxy", f"socks5h://127.0.0.1:{socks_port}", "https://1.1.1.1/cdn-cgi/trace"
         )
-        await asyncio.wait_for(curl.wait(), timeout=TIMEOUT + 5)
+        await asyncio.wait_for(curl.wait(), timeout=20)
         return curl.returncode == 0
-    except Exception as e:
-        # Если хочешь видеть ошибки в логах, расскомментируй:
-        # print(f"Error: {e}")
-        return False
+    except: return False
     finally:
-        if proc:
-            try:
-                proc.terminate()
-                await proc.wait()
+        if proc: 
+            try: proc.terminate(); await proc.wait()
             except: pass
         if cfg_path: cfg_path.unlink(missing_ok=True)
 
 async def worker(q, xray_path, out_path, worker_id):
-    my_port = 12000 + worker_id
+    my_port = 16000 + worker_id # Смещаем порты выше
     while True:
         link = await q.get()
         if link is None: break
-        
         if await check_one(link, xray_path, my_port):
             print(f"✅ [W{worker_id}] LIVE")
-            with open(out_path, "a", encoding="utf-8") as f:
+            with open(out_path, "a", encoding="utf-8") as f: 
                 f.write(link + "\n")
         q.task_done()
 
@@ -83,27 +53,36 @@ async def main():
     parser.add_argument("-i", "--input", default="raw_udp.txt")
     parser.add_argument("-o", "--output", default="distributor.txt")
     parser.add_argument("-x", "--xray", default="./XrayChecker/bin/xray")
+    parser.add_argument("-w", "--workers", type=int, default=15)
     args = parser.parse_args()
-
-    xray_p = Path(args.xray).absolute()
-    if not xray_p.exists():
-        # Попробуем найти в текущей папке, если по основному пути нет
-        xray_p = Path("./xray").absolute()
-        
-    if not xray_p.exists():
-        print(f"❌ Xray NOT FOUND at {xray_p}")
+    
+    if not Path(args.input).exists():
+        print("❌ Input file not found!")
         return
 
-    os.chmod(xray_p, 0o755)
     links = [l.strip() for l in Path(args.input).read_text().splitlines() if "://" in l]
+    print(f"📡 Stella UDP Pro: Checking {len(links)} links with {args.workers} workers...")
     
-    queue = asyncio.Queue()
-    for l in links: await queue.put(l)
-    for _ in range(WORKERS): await queue.put(None)
-
-    print(f"📡 Stella UDP Pro: Starting check with Xray at {xray_p}")
-    tasks = [asyncio.create_task(worker(queue, xray_p, args.output, i)) for i in range(WORKERS)]
-    await asyncio.gather(*tasks)
+    q = asyncio.Queue()
+    for l in links: await q.put(l)
+    for _ in range(args.workers): await q.put(None)
+    
+    x_path = Path(args.xray).absolute()
+    if not x_path.exists():
+        print(f"❌ Xray bin not found at {x_path}")
+        return
+        
+    os.chmod(x_path, 0o755)
+    
+    try:
+        await asyncio.gather(*[asyncio.create_task(worker(q, x_path, args.output, i)) for i in range(args.workers)])
+    except Exception as e:
+        print(f"⚠️ Error during check: {e}")
+    finally:
+        print("🏁 UDP Check Finished!")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
