@@ -14,7 +14,7 @@ except (ImportError, ModuleNotFoundError):
 UDP_PROTOCOLS = ["hy2://", "tuic://", "hysteria2://", "wireguard://", "warp://"]
 
 # Протоколы для стандартной проверки порта (в файл raw_configs.txt)
-TCP_PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://"]
+TCP_PROTOCOLS = ["vless://"]
 
 ALL_PROTOCOLS = TCP_PROTOCOLS + UDP_PROTOCOLS
 
