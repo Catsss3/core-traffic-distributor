@@ -46,7 +46,7 @@ async def get_goida_files(session, token):
     return []
 
 async def main():
-    print("📡 Stella Engine v2.2: Раздельный сбор (Только VLESS TCP / UDP-Safe)...")
+    print("📡 Stella Engine v2.3: Фикс синтаксиса...")
     async with aiohttp.ClientSession(headers={'User-Agent': 'Mozilla/5.0'}) as session:
         tasks = [fetch(session, url) for url in SOURCES.values()]
         g_urls = await get_goida_files(session, TOKEN)
@@ -54,7 +54,7 @@ async def main():
         all_results = await asyncio.gather(*tasks)
     
     tcp_unique, udp_unique = set(), set()
-    regex = r"(" + "|".join(map(re.escape, ALL_PROTOCOLS)) + r")[^\\s\"'<>]+"
+    regex = r"(" + "|".join(map(re.escape, ALL_PROTOCOLS)) + r")[^\s\"'<>]+"
     
     for block in all_results:
         for match in re.finditer(regex, block, flags=re.IGNORECASE):
@@ -65,14 +65,12 @@ async def main():
                 tcp_unique.add(link)
     
     with open("raw_configs.txt", "w", encoding="utf-8") as f:
-        for l in sorted(tcp_unique): f.write(l + "
-")
+        for l in sorted(tcp_unique): f.write(l + "\n")
         
     with open("raw_udp.txt", "w", encoding="utf-8") as f:
-        for l in sorted(udp_unique): f.write(l + "
-")
+        for l in sorted(udp_unique): f.write(l + "\n")
         
-    print(f"🏁 Финиш локального сбора! TCP: {len(tcp_unique)} | UDP-Safe: {len(udp_unique)}")
+    print(f"🏁 Финиш! TCP: {len(tcp_unique)} | UDP-Safe: {len(udp_unique)}")
 
 if __name__ == '__main__':
     asyncio.run(main())
