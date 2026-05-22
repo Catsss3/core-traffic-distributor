@@ -1,63 +1,38 @@
-name: Global Proxy Factory
+name: 🚀 Auto-Update Sing-Box Distributor
+
 on:
-  workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: '0 2 * * *' # Скрипт запускается строго один раз в сутки в 02:00 UTC
+  workflow_dispatch: # Позволяет пинать скрипт кнопкой из панели GitHub Actions
+
+permissions:
+  contents: write
 
 jobs:
-  build-and-check:
+  distribute:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: 📂 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python 3.10
+        uses: actions/setup-python@v5
         with:
-          token: ${{ secrets.WORKFLOW_TOKEN }}
+          python-version: '3.10'
 
-      - name: Set up Python & Go
-        uses: actions/setup-python@v4
-        with: { python-version: '3.10' }
-      - uses: actions/setup-go@v4
-        with: { go-version: '1.21' }
-
-      - name: Install Dependencies
-        run: pip install aiohttp tqdm requests colorama rich psutil pysocks
-
-      - name: Step 1 - Search Engine
+      - name: ⚡ Run Sing-Box Check Engine
         run: python engine.py
 
-      - name: Step 2 - TCP Checker
+      - name: 🚀 Commit and Push Clean Results
         run: |
-          cp raw_configs.txt tcp_checker/raw_configs.txt
-          cd tcp_checker
-          go build -o tcp_checker_bin tcp_checker.go
-          ./tcp_checker_bin
-          cd ..
-
-      - name: Step 3 - Xray Hybrid Check (TCP + UDP)
-        run: |
-          # Подготовка Xray
-          git clone https://github.com/limingda1212/XrayChecker.git
-          mkdir -p XrayChecker/bin
-          curl -L -o xray.zip https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-64.zip
-          unzip -o xray.zip xray -d XrayChecker/bin/
-          chmod +x XrayChecker/bin/xray
+          git config --global user.name "Catsss3"
+          git config --global user.email "catsss@codeberg.org"
           
-          # Запуск основного чекера (TCP)
-          python proxy_manager.py
+          git add distributor.txt subscribe.txt sources/* || true
           
-          # Запуск Stella UDP Pro (Hysteria2/TUIC)
-          if [ -f raw_udp.txt ]; then
-            echo "🛡 Запуск Stella UDP Pro..."
-            python stella_udp_pro.py -i raw_udp.txt -o distributor.txt -x ./XrayChecker/bin/xray
+          if git diff --staged --quiet; then
+            echo "Изменений нет. Пропускаем пуш."
+          else
+            git commit -m "💥 Суточная фильтрация базы прокси"
+            git push origin main
           fi
-
-      - name: Step 4 - Push Results
-        run: |
-          echo "--- ИТОГОВАЯ СТАТИСТИКА ---"
-          echo "Всего в distributor.txt: $(grep -c '://' distributor.txt || echo 0)"
-          echo "Из них Hy2/TUIC: $(grep -E 'hy2://|tuic://' distributor.txt | wc -l || echo 0)"
-          
-          git config --local user.email "action@github.com"
-          git config --local user.name "Stella-Global-Bot"
-          git add .
-          git commit -m "🚀 Hybrid Factory Sync | TCP + UDP Pro | $(date)" || exit 0
-          git push

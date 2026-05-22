@@ -1,2 +1,2 @@
-# core-traffic-distributor
-Core utility for traffic load balancing and distribution.
+# Core Traffic Distributor
+Powered by Sing-Box core. Automated check once a day.
